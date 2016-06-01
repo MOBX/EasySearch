@@ -11,6 +11,7 @@ version 	索引版本
 
 ###接口设计
 1. schema 文档属性键值对
+```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d ' 
 {
     "content": {
@@ -59,13 +60,15 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
     }
 }'
 {"status":200}
-
+```
 
 //索引库schema定义查询
+```
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/schema'  
-
+```
 
 2. index  文档内容
+```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d ' 
 [
 	{
@@ -85,20 +88,24 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d '
 	}
 ]'
 {"status":200}
+```
 
 3. bulk   批量索引文档
+```
 curl -XPOST 'http://127.0.0.1:8080/bulk' --data-binary "index.json"
 {"status":200}
+```
 index.json是存在当前目录下的一个json文件,里面存储了一个josn数组,你可以让它存储任何结构相同的数组.
 
 
 4. alias  索引文档别名,同义词
+```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '  
 {
     "alias": "news_index"
 }'  
 {"status":200}
-
+```
 
 
 ##搜索服务
@@ -112,9 +119,9 @@ sort   		排序规则,默认文本相似度排序
 
 ###接口设计
 1. search 
-
+```
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?query.keywords='+keywords
-
+```
 
 
 
@@ -125,5 +132,6 @@ analyzer   分词规则
 
 ###接口设计
 1. analyzer 
-
+```
 curl -XGET 'http://127.0.0.1:8080/analyzer?text='+text 
+```
