@@ -12,6 +12,7 @@
 ###接口设计
 
 1. schema定义 文档属性键值对
+
 ```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d ' 
 {
