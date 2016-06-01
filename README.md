@@ -2,11 +2,11 @@
 
 
 ##索引建立
-indexName 	索引名称命名空间
-indexType 	文档名称
-schema 		索引键值对
-data   		索引内容
-version 	索引版本
+* indexName 	索引名称命名空间
+* indexType 	文档名称
+* schema 		索引键值对
+* data   		索引内容
+* version 	索引版本
 
 
 ###接口设计
@@ -62,7 +62,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
 {"status":200}
 ```
 
-//索引库schema定义查询
+###索引库schema定义查询
 ```
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/schema'  
 ```
@@ -109,12 +109,12 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '
 
 
 ##搜索服务
-indexName 	索引命名空间
-indexType 	文档名称
-fields 		输出键值对
-query  		搜索内容(keywords,must,match,fuzzy)
-filter 		过滤规则
-sort   		排序规则,默认文本相似度排序
+* indexName 	索引命名空间
+* indexType 	文档名称
+* fields 		输出键值对
+* query  		搜索内容(keywords,must,match,fuzzy)
+* filter 		过滤规则
+* sort   		排序规则,默认文本相似度排序
 
 
 ###接口设计
@@ -126,8 +126,8 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?query.keywords='+ke
 
 
 ##分词服务
-text 	   文本内容
-analyzer   分词规则
+* text 	   文本内容
+* analyzer   分词规则
 
 
 ###接口设计
