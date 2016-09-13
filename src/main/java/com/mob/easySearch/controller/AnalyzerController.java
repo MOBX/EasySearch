@@ -8,10 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.lamfire.json.JSON;
 import com.lamfire.utils.StringUtils;
@@ -26,7 +23,7 @@ import com.mob.easySearch.support.JsonResult;
 public class AnalyzerController extends BaseController {
 
     @ApiOperation(value = "analyzer text", httpMethod = "GET", response = JsonResult.class, notes = "分词接口")
-    @RequestMapping(value = "/analyzer", method = RequestMethod.GET)
+    @RequestMapping(value = "/analyzer", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzer(@ApiParam(required = true, name = "text", value = "文本", defaultValue = "hello world!") @RequestParam("text") String text,
                   @ApiParam(required = false, name = "analyzer", value = "分词器", defaultValue = "ik") @RequestParam("text") String analyzer) {
         if (StringUtils.isEmpty(text)) return fail();
@@ -36,7 +33,7 @@ public class AnalyzerController extends BaseController {
     }
 
     @ApiOperation(value = "list all analyzer", httpMethod = "GET", response = JsonResult.class, notes = "支持的全部分词器")
-    @RequestMapping(value = "/analyzers", method = RequestMethod.GET)
+    @RequestMapping(value = "/analyzers", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzers() {
         return success();
     }

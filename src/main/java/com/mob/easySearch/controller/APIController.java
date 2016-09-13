@@ -22,7 +22,7 @@ public class APIController extends BaseController {
 
     @ApiIgnore
     @ApiOperation(value = "Hello World", httpMethod = "POST", response = String.class, notes = "requires noting")
-    @RequestMapping(value = "/hello", method = RequestMethod.POST)
+    @RequestMapping(value = "/hello", produces = { "application/json" }, method = RequestMethod.POST)
     String getDemo() {
         return "Hello World \n" + "mob.com!";
     }

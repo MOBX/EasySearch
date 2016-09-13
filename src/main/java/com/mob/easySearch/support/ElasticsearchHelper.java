@@ -3,8 +3,10 @@
  */
 package com.mob.easySearch.support;
 
-import java.util.List;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.*;
 import java.util.Map.Entry;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -17,6 +19,7 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -32,16 +35,21 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.sort.SortOrder;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
+import com.lamfire.logger.LoggerFactory;
 import com.lamfire.utils.Lists;
 import com.lamfire.utils.StringUtils;
 
@@ -50,7 +58,8 @@ import com.lamfire.utils.StringUtils;
  */
 public class ElasticsearchHelper {
 
-    private static final Logger _ = Logger.getLogger(ElasticsearchHelper.class);
+    private static final Logger _ = LoggerFactory.getLogger(ElasticsearchHelper.class);
+
     private Client              client;
     private String              clusterName;
 
@@ -122,41 +131,127 @@ public class ElasticsearchHelper {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> queryString(String indexName, String indexType, int pageno, int pagesize, String q) {
+    public Map<String, Object> queryString(String indexName, String indexType, int pageno, int pagesize, String q,
+                                           Map<String, Object[]> filters, Set<String> matchField) {
+        if (StringUtils.isEmpty(q)) q = "*";
+        Set<String> fields = matchField;
+        Set<String> allFields = Sets.newHashSet();
         GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
-        List<String> fields = Lists.newArrayList();
         try {
             Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
-            for (Entry<String, Object> entry : sourceMap.entrySet()) {
-                String field = entry.getKey();
-                Map<String, Object> valueMap = (Map<String, Object>) entry.getValue();
-                if (valueMap != null && valueMap.containsKey("searched")) {
-                    fields.add(field);
-                }
-            }
-            if (fields.isEmpty()) {
-                fields.addAll(sourceMap.keySet());
-            }
+            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
+            allFields.addAll(_sourceMap.keySet());
+            // for (Entry<String, Object> entry : _sourceMap.entrySet()) {
+            // String field = entry.getKey();
+            // Map<String, Object> valueMap = (Map<String, Object>) entry.getValue();
+            // if (valueMap != null && valueMap.containsKey("searched")) fields.add(field);
+            // }
         } catch (Exception e) {
+            _.error("queryString error!", e);
         }
 
+        // 分词查询
         QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
         queryStringBuilder.useDisMax(true);
         for (String field : fields)
             queryStringBuilder.field(field);
 
-        SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setSearchType(SearchType.DEFAULT);
-        SearchResponse response = search.setQuery(queryStringBuilder)//
+        // 过滤条件
+        BoolFilterBuilder boolFilter = null;
+        if (filters != null && filters.size() != 0) {
+            boolFilter = FilterBuilders.boolFilter();
+            for (Entry<String, Object[]> entry : filters.entrySet()) {
+                if (allFields.contains(entry.getKey())) {
+                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
+                }
+            }
+        }
+        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+
+        SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setFrom((pageno - 1) * pagesize)//
         .setSize(pagesize)//
-        .addSort("createat", SortOrder.DESC)//
-        .execute().actionGet();
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
+        SearchResponse response = search.execute().actionGet();
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);
         Map<String, Object> result = Maps.newHashMap();
         result.put("total", total);
         result.put("list", list);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> aggregation(String indexName, String indexType, int pageno, int pagesize, String q,
+                                           Map<String, Object[]> filters, Set<String> matchField,
+                                           Set<String> aggregation) {
+        if (StringUtils.isEmpty(q)) q = "*";
+        Set<String> fields = matchField;
+        Set<String> allFields = Sets.newHashSet();
+        GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
+        try {
+            Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
+            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
+            allFields.addAll(_sourceMap.keySet());
+        } catch (Exception e) {
+            _.error("queryString error!", e);
+        }
+
+        // 分词查询
+        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
+        queryStringBuilder.useDisMax(true);
+        for (String field : fields)
+            queryStringBuilder.field(field);
+
+        // 过滤条件
+        BoolFilterBuilder boolFilter = null;
+        if (filters != null && filters.size() != 0) {
+            boolFilter = FilterBuilders.boolFilter();
+            for (Entry<String, Object[]> entry : filters.entrySet()) {
+                if (allFields.contains(entry.getKey())) {
+                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
+                }
+            }
+        }
+        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+
+        SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
+        .setSize(0)//
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        // 按字段去重
+        List<String> aggList = Lists.newArrayList();
+        for (String agg : aggregation) {
+            if (allFields.contains(agg)) aggList.add(agg);
+        }
+        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(0);
+        for (String aggStr : aggList) {
+            termsBuilder.field(aggStr);
+        }
+        search.addAggregation(termsBuilder//
+        .subAggregation(AggregationBuilders.topHits("top-tags-record")//
+        .setSize(1).setFetchSource(allFields.toArray(new String[] {}), null)));
+
+        SearchResponse response = search.execute().actionGet();
+        long total = 0l;
+
+        Aggregations agg = response.getAggregations();
+        Terms types = agg.get("top-tags");
+        System.out.println(types.getSumOfOtherDocCounts());
+        Collection<Terms.Bucket> collection = types.getBuckets();
+        total += collection.size();
+
+        List<Map<String, Object>> list = Lists.newLinkedList();
+        for (Terms.Bucket bucket : collection) {
+            TopHits topHits = bucket.getAggregations().get("top-tags-record");
+            list.addAll(result(topHits));
+        }
+
+        Set<Map<String, Object>> sets = Sets.newLinkedHashSet(list);
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("total", sets.size());
+        result.put("list", sets);
         return result;
     }
 
@@ -288,6 +383,28 @@ public class ElasticsearchHelper {
         bulk(bulk);
     }
 
+    public int bulk(String indexName, String indexType, File file) throws Exception {
+        FileReader fr = new FileReader(file);
+        BufferedReader br = new BufferedReader(fr);
+        String line = null;
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+        int count = 0;
+        while ((line = br.readLine()) != null) {
+            try {
+                bulkRequest.add(client.prepareIndex("test", "article").setSource(line));
+                if (count % 10 == 0) {
+                    bulkRequest.execute().actionGet();
+                }
+                count++;
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+        bulkRequest.execute().actionGet();
+        br.close();
+        return count;
+    }
+
     /**
      * 清空索引数据
      * 
@@ -366,6 +483,15 @@ public class ElasticsearchHelper {
     private List<Map<String, Object>> result(SearchResponse res) {
         List<Map<String, Object>> result = Lists.newArrayList();
         SearchHits totalHits = res.getHits();
+        SearchHit[] hits = totalHits.getHits();
+        for (SearchHit hit : hits)
+            result.add(hit.getSource());
+        return result;
+    }
+
+    private List<Map<String, Object>> result(TopHits topHits) {
+        List<Map<String, Object>> result = Lists.newArrayList();
+        SearchHits totalHits = topHits.getHits();
         SearchHit[] hits = totalHits.getHits();
         for (SearchHit hit : hits)
             result.add(hit.getSource());

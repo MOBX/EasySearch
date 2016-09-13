@@ -30,7 +30,7 @@ public class SchemaController extends BaseController {
 
     @ResponseBody
     @ApiOperation(value = "POST Schema", httpMethod = "POST", response = JsonResult.class, notes = "提交Schema定义")
-    @RequestMapping(value = "/{indexName}/{indexType}/schema", method = RequestMethod.POST)
+    @RequestMapping(value = "/{indexName}/{indexType}/schema", produces = { "application/json" }, method = RequestMethod.POST)
     JSON schema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                 @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType,
                 @ApiParam(required = true, name = "fields", value = "索引shcema") Map<String, Map<String, Object>> fields) {
@@ -49,7 +49,7 @@ public class SchemaController extends BaseController {
 
     @ResponseBody
     @ApiOperation(value = "GET Schema", httpMethod = "GET", response = JsonResult.class, notes = "获取Schema定义")
-    @RequestMapping(value = "/{indexName}/{indexType}/schema", method = RequestMethod.GET)
+    @RequestMapping(value = "/{indexName}/{indexType}/schema", produces = { "application/json" }, method = RequestMethod.GET)
     JSON getSchema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                    @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();

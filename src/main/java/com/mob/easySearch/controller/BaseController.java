@@ -4,12 +4,15 @@
 package com.mob.easySearch.controller;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
+import com.lamfire.logger.LoggerFactory;
 import com.lamfire.utils.StringUtils;
 import com.mob.easySearch.support.ElasticsearchHelper;
 
@@ -19,7 +22,8 @@ import com.mob.easySearch.support.ElasticsearchHelper;
 @Component
 public class BaseController {
 
-    protected static final Logger        _ = Logger.getLogger(BaseController.class);
+    protected static final Logger        _      = LoggerFactory.getLogger(BaseController.class);
+    protected static final Logger        access = LoggerFactory.getLogger("ACCESS");
 
     protected static ElasticsearchHelper es;
 
@@ -27,6 +31,9 @@ public class BaseController {
     private String                       clusterName;
     @Value("${es.nodes}")
     private String                       nodes;
+
+    @Autowired
+    protected HttpServletRequest         request;
 
     @PostConstruct
     private void init() {
