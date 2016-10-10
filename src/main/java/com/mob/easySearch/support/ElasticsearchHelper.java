@@ -217,7 +217,7 @@ public class ElasticsearchHelper {
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
-        .setSize(0)//
+        .setSize(0)// size为0,结果返回全部聚合查询数据,也就是Global
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // 按字段去重
