@@ -127,11 +127,33 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '
 
 ####1. search 
 ```
-curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?query.keywords='+keywords
+#普通的全文检索,keywords为空按照得分全部查询
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords'
 ```
 
+```
+#指定索引字段的全文检索
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&field=field'
+```
 
+```
+#指定某些字段完全匹配的全文检索
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&xxx=yyy'
+```
 
+```
+#指定字段区间范围查询的全文检索(在正常字段后面加上下划线 gt:大于,lt:小于,gte:大于或等于,lte:小于或等于)
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&xxx_gt=yyy&xxx_gt=yyy&zzz_lt=rrr'
+```
+
+```
+#指定字段的聚合查询全文检索(其中distinct为索引中任意字段,distinct字段为聚合字段,可以支持多个同时聚合)
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxxx'
+```
+
+```
+上述几种基础查询,可以任意组合来实现多种业务查询场景.
+```
 ##分词服务
 * text 	   文本内容
 * analyzer   分词规则
@@ -141,5 +163,12 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?query.keywords='+ke
 
 ####1. analyzer 
 ```
-curl -XGET 'http://127.0.0.1:8080/analyzer?text='+text 
+#对text文本进行分词,使用默认分词器;如需其他分词器,可带上`&analyzer=jcseg`等
+curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
+```
+
+####2. analyzers 
+```
+#获取服务目前支持的全部分词器
+curl -XGET 'http://127.0.0.1:8080/analyzers' 
 ```
