@@ -182,7 +182,7 @@ public class ElasticsearchHelper {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked" })
     public Map<String, Object> aggregation(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField,
                                            Set<String> aggregation) {
@@ -241,6 +241,7 @@ public class ElasticsearchHelper {
         System.out.println(types.getSumOfOtherDocCounts());
         Collection<Terms.Bucket> collection = types.getBuckets();
         total += collection.size();
+        _.debug("aggregation total=" + total);
 
         List<Map<String, Object>> list = Lists.newLinkedList();
         for (Terms.Bucket bucket : collection) {
@@ -397,7 +398,7 @@ public class ElasticsearchHelper {
                 }
                 count++;
             } catch (Exception e) {
-                // TODO: handle exception
+                _.error("bulk error!", e);
             }
         }
         bulkRequest.execute().actionGet();
