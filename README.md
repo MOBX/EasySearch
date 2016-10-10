@@ -61,6 +61,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
         "index_analyzer": "whitespace"
     }
 }'
+#return
 {"status":200}
 ```
 
@@ -91,6 +92,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d '
 	    "website_id": "news"
 	}
 ]'
+#return
 {"status":200}
 ```
 
@@ -98,6 +100,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d '
 
 ```
 curl -XPOST 'http://127.0.0.1:8080/bulk' --data-binary "index.json"
+#return
 {"status":200}
 ```
 index.json是存在当前目录下的一个json文件,里面存储了一个josn数组,你可以让它存储任何结构相同的数组.
@@ -109,7 +112,8 @@ index.json是存在当前目录下的一个json文件,里面存储了一个josn�
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '  
 {
     "alias": "news_index"
-}'  
+}' 
+#return 
 {"status":200}
 ```
 
