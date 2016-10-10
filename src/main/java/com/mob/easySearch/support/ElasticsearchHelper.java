@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
@@ -47,6 +48,7 @@ import org.elasticsearch.search.sort.SortOrder;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
 import com.lamfire.logger.LoggerFactory;
@@ -144,7 +146,8 @@ public class ElasticsearchHelper {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> queryString(String indexName, String indexType, int pageno, int pagesize, String q,
-                                           Map<String, Object[]> filters, Set<String> matchField) {
+                                           Map<String, Object[]> filters, Set<String> matchField,
+                                           Table<String, String, Object> ranges) {
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -167,7 +170,6 @@ public class ElasticsearchHelper {
         queryStringBuilder.useDisMax(true);
         for (String field : fields)
             queryStringBuilder.field(field);
-
         // 过滤条件
         BoolFilterBuilder boolFilter = null;
         if (filters != null && filters.size() != 0) {
@@ -177,6 +179,22 @@ public class ElasticsearchHelper {
                     boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
                 }
             }
+        }
+        // 区间查询
+        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
+        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
+            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
+            for (Entry<String, Object> row : range.getValue().entrySet()) {
+                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
+            }
+            rangeList.add(rangeFilter);
+        }
+        if (rangeList.size() > 0) {
+            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
+            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
         }
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
@@ -210,7 +228,7 @@ public class ElasticsearchHelper {
     @SuppressWarnings({ "unchecked" })
     public Map<String, Object> aggregation(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField,
-                                           Set<String> aggregation) {
+                                           Set<String> aggregation, Table<String, String, Object> ranges) {
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -228,7 +246,6 @@ public class ElasticsearchHelper {
         queryStringBuilder.useDisMax(true);
         for (String field : fields)
             queryStringBuilder.field(field);
-
         // 过滤条件
         BoolFilterBuilder boolFilter = null;
         if (filters != null && filters.size() != 0) {
@@ -238,6 +255,22 @@ public class ElasticsearchHelper {
                     boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
                 }
             }
+        }
+        // 区间查询
+        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
+        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
+            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
+            for (Entry<String, Object> row : range.getValue().entrySet()) {
+                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
+            }
+            rangeList.add(rangeFilter);
+        }
+        if (rangeList.size() > 0) {
+            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
+            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
         }
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
@@ -539,5 +572,12 @@ public class ElasticsearchHelper {
         .prepareIndex(indexName, indexType, id.toString())//
         .setConsistencyLevel(WriteConsistencyLevel.ONE)//
         .setSource(source);
+    }
+
+    // 自定义正则表达式匹配
+    public static boolean customMatches(String pattern, String value) {
+        if (StringUtils.isBlank(pattern) || StringUtils.isBlank(value)) return false;
+        Pattern p = Pattern.compile(pattern);
+        return p.matcher(value).matches();
     }
 }
