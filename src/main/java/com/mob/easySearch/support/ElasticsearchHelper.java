@@ -130,6 +130,18 @@ public class ElasticsearchHelper {
         return client;
     }
 
+    /**
+     * 全文检索,关键词查询
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param q
+     * @param filters
+     * @param matchField
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public Map<String, Object> queryString(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField) {
@@ -182,6 +194,19 @@ public class ElasticsearchHelper {
         return result;
     }
 
+    /**
+     * 聚合查询
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param q
+     * @param filters
+     * @param matchField
+     * @param aggregation
+     * @return
+     */
     @SuppressWarnings({ "unchecked" })
     public Map<String, Object> aggregation(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField,
@@ -238,7 +263,6 @@ public class ElasticsearchHelper {
 
         Aggregations agg = response.getAggregations();
         Terms types = agg.get("top-tags");
-        System.out.println(types.getSumOfOtherDocCounts());
         Collection<Terms.Bucket> collection = types.getBuckets();
         total += collection.size();
         _.debug("aggregation total=" + total);
@@ -256,7 +280,16 @@ public class ElasticsearchHelper {
         return result;
     }
 
-    // match查询
+    /**
+     * match查询
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param params
+     * @return
+     */
     public Map<String, Object> match(String indexName, String indexType, int pageno, int pagesize,
                                      Map<String, Object> params) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
@@ -393,9 +426,7 @@ public class ElasticsearchHelper {
         while ((line = br.readLine()) != null) {
             try {
                 bulkRequest.add(client.prepareIndex("test", "article").setSource(line));
-                if (count % 10 == 0) {
-                    bulkRequest.execute().actionGet();
-                }
+                if (count % 10 == 0) bulkRequest.execute().actionGet();
                 count++;
             } catch (Exception e) {
                 _.error("bulk error!", e);
@@ -443,6 +474,8 @@ public class ElasticsearchHelper {
         }
         return getClient().admin().indices().analyze(request).actionGet();
     }
+
+    // *********************************************** private method *******************************************//
 
     private synchronized XContentBuilder getMapping(String indexName, String indexType,
                                                     Map<String, Map<String, Object>> fields) {
@@ -502,6 +535,9 @@ public class ElasticsearchHelper {
     private IndexRequestBuilder getIndexRequestBuilder(String indexName, String indexType, Object id,
                                                        Map<String, Object> source) {
         if (id == null || StringUtils.isBlank(id.toString())) return null;
-        return getClient().prepareIndex(indexName, indexType, id.toString()).setConsistencyLevel(WriteConsistencyLevel.ONE).setSource(source);
+        return getClient()//
+        .prepareIndex(indexName, indexType, id.toString())//
+        .setConsistencyLevel(WriteConsistencyLevel.ONE)//
+        .setSource(source);
     }
 }
