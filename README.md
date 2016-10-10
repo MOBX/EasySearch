@@ -6,7 +6,7 @@
 * indexType 	文档名称
 * schema 		索引键值对
 * data   		索引内容
-* version 	索引版本
+* version 		索引版本
 
 
 ###接口设计
@@ -163,7 +163,7 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&d
 
 ####1. analyzer 
 ```
-#对text文本进行分词,使用默认分词器;如需其他分词器,可带上`&analyzer=jcseg`等
+#对text文本进行分词,使用默认分词器;如需其他分词器,可带上&analyzer=jcseg等
 curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
 ```
 
@@ -172,3 +172,18 @@ curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
 #获取服务目前支持的全部分词器
 curl -XGET 'http://127.0.0.1:8080/analyzers' 
 ```
+
+
+
+
+### 安裝本地依赖包
+`mvn clean`，然后`mvn -B -DskipTests clean dependency:list install`
+
+### 下载依赖 & 测试
+`mvn clean install`
+
+### 打包
+`mvn clean package -DskipTests`
+
+### 运行
+`nohup java -cp "/usr/lib/jvm/java-7-openjdk-amd64/lib:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib:/home/zxc/workspace/easySearch/conf/:/home/zxc/workspace/easySearch/lib/*:" com.mob.easySearch.EasySearchBoot > /dev/null  2>&1 &`
