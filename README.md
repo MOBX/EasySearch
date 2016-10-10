@@ -173,7 +173,10 @@ curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
 curl -XGET 'http://127.0.0.1:8080/analyzers' 
 ```
 
-
+##
+##
+##
+##
 
 
 ### 安裝本地依赖包
