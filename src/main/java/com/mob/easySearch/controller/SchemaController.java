@@ -10,13 +10,13 @@ import io.swagger.annotations.ApiParam;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.springframework.web.bind.annotation.*;
 
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import com.lamfire.json.JSON;
-import com.lamfire.utils.StringUtils;
 import com.mob.easySearch.support.JsonResult;
 
 /**

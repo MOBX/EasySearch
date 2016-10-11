@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
@@ -53,7 +54,6 @@ import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
 import com.lamfire.logger.LoggerFactory;
 import com.lamfire.utils.Lists;
-import com.lamfire.utils.StringUtils;
 
 /**
  * @author zxc Jun 13, 2016 4:20:25 PM

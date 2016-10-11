@@ -72,12 +72,12 @@ public class EasySearchBoot extends SpringBootServletInitializer {
         .paths(PathSelectors.regex("/v1/.*")).build()//
 
         .apiInfo(new ApiInfoBuilder()//
-        .contact("zhangxc@youzu.com")//
+        .contact("zhangxiongcai337@gmail.com")//
         .title("EasySearch")//
         .description("MOB通用搜索服务.")//
         .termsOfServiceUrl("http://mob.com")//
         .license("Apache License Version 2.0")//
-        .licenseUrl("https://github.com/springfox/springfox/blob/master/LICENSE")//
+        .licenseUrl("https://github.com/MOBX/EasySearch/blob/master/LICENSE")//
         .version("1.0").build());
     }
 }
