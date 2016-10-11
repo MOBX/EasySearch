@@ -37,7 +37,7 @@ public class IndexConroller extends BaseController {
     @PathVariable("indexType")
     final String indexType, @RequestBody Object... data) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
-        if (data == null || data.length == 0) return success();
+        if (data == null || data.length == 0) return ok();
 
         for (Object source : data) {
             final Map<String, Object> _source = JSON.fromJavaObject(source);
@@ -54,7 +54,7 @@ public class IndexConroller extends BaseController {
                 }
             });
         }
-        return success();
+        return ok();
     }
 
     @ResponseBody
@@ -66,7 +66,7 @@ public class IndexConroller extends BaseController {
     @PathVariable("indexType")
     final String indexType, @RequestParam() MultipartFile jsonfile) throws Exception {
         Integer count = es.bulk(indexName, indexType, convert(jsonfile));
-        return success(count);
+        return ok(count);
     }
 
     public File convert(MultipartFile file) throws Exception {
@@ -85,6 +85,6 @@ public class IndexConroller extends BaseController {
                @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
 
-        return success();
+        return ok();
     }
 }

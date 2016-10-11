@@ -45,7 +45,7 @@ public class BaseController {
         return result(900, null);
     }
 
-    public static JSON success() {
+    public static JSON ok() {
         return result(200, null);
     }
 
@@ -53,7 +53,7 @@ public class BaseController {
         return result(900, data);
     }
 
-    public static JSON success(Object data) {
+    public static JSON ok(Object data) {
         return result(200, data);
     }
 

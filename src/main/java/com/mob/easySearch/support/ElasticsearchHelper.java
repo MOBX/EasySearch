@@ -145,7 +145,7 @@ public class ElasticsearchHelper {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> queryString(String indexName, String indexType, int pageno, int pagesize, String q,
+    public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField,
                                            Table<String, String, Object> ranges) {
         if (StringUtils.isEmpty(q)) q = "*";
@@ -289,7 +289,8 @@ public class ElasticsearchHelper {
         }
         search.addAggregation(termsBuilder//
         .subAggregation(AggregationBuilders.topHits("top-tags-record")//
-        .setSize(1).setFetchSource(allFields.toArray(new String[] {}), null)));
+        .setSize(1)//
+        .setFetchSource(allFields.toArray(new String[] {}), null)));
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;

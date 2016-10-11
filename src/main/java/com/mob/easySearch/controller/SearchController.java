@@ -70,15 +70,15 @@ public class SearchController extends BaseController {
             access.info("[SearchController]: filter=" + JSON.toJSONString(filter) + ",field=" + field);
             Map<String, Object> result = Maps.newHashMap();
             if (aggregation.size() == 0) {
-                result = es.queryString(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
+                result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
                 result = es.aggregation(indexName, indexType, pageno, pagesize, keywords, filter, field, aggregation,
                                         ranges);
             }
-            return success(result);
+            return ok(result);
         } catch (Exception e) {
             _.error("es.queryString error!", e);
         }
-        return success();
+        return ok();
     }
 }

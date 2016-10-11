@@ -23,6 +23,6 @@ public class TestController extends BaseController {
     @ApiOperation(value = "POST TEST", httpMethod = "POST", response = JsonResult.class, notes = "测试提交数据")
     @RequestMapping(produces = { "application/json" }, method = RequestMethod.POST)
     JSON schema(@RequestBody Object... data) {
-        return success(data);
+        return ok(data);
     }
 }

@@ -29,12 +29,12 @@ public class AnalyzerController extends BaseController {
         if (StringUtils.isEmpty(text)) return fail();
 
         AnalyzeResponse res = es.analyzer("mob_news", text, "ik");
-        return success(res.getTokens());
+        return ok(res.getTokens());
     }
 
     @ApiOperation(value = "list all analyzer", httpMethod = "GET", response = JsonResult.class, notes = "支持的全部分词器")
     @RequestMapping(value = "/analyzers", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzers() {
-        return success();
+        return ok();
     }
 }

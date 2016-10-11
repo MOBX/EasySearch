@@ -40,7 +40,7 @@ public class SchemaController extends BaseController {
             es.dropIndex(indexName);
             if (!es.existsIndex(indexName)) es.createIndex(indexName);
             es.createMapping(indexName, indexType, fields);
-            return success();
+            return ok();
         } catch (Exception e) {
             _.error("create schema Exception!", e);
         }
@@ -57,7 +57,7 @@ public class SchemaController extends BaseController {
         try {
             GetMappingsResponse mappingsRes = es.getMapping(indexName, indexType);
             Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
-            return success(sourceMap.get("properties"));
+            return ok(sourceMap.get("properties"));
         } catch (IOException e) {
             _.error("getSchema IOException!", e);
         }
