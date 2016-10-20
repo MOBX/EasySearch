@@ -66,9 +66,9 @@ public class SearchController extends BaseController {
                 ranges.put(r, c, entry.getValue()[0]);
             }
         }
+        Map<String, Object> result = Maps.newHashMap();
         try {
             access.info("[SearchController]: filter=" + JSON.toJSONString(filter) + ",field=" + field);
-            Map<String, Object> result = Maps.newHashMap();
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
@@ -79,6 +79,6 @@ public class SearchController extends BaseController {
         } catch (Exception e) {
             _.error("es.queryString error!", e);
         }
-        return ok();
+        return ok(result);
     }
 }
