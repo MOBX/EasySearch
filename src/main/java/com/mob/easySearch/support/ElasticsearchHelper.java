@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 uuzu.com All right reserved.
+ * Copyright 2015-2020 msun.com All right reserved.
  */
 package com.mob.easySearch.support;
 
@@ -207,8 +207,8 @@ public class ElasticsearchHelper {
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);
         Map<String, Object> result = Maps.newHashMap();
-        result.put("total", total);
-        result.put("list", list);
+        if (total > 0) result.put("total", total);
+        if (list != null && list.size() > 0) result.put("list", list);
         return result;
     }
 
@@ -309,8 +309,8 @@ public class ElasticsearchHelper {
 
         Set<Map<String, Object>> sets = Sets.newLinkedHashSet(list);
         Map<String, Object> result = Maps.newHashMap();
-        result.put("total", sets.size());
-        result.put("list", sets);
+        if (sets != null && sets.size() > 0) result.put("total", total);
+        if (sets != null && sets.size() > 0) result.put("list", list);
         return result;
     }
 
@@ -342,8 +342,8 @@ public class ElasticsearchHelper {
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);
         Map<String, Object> result = Maps.newHashMap();
-        result.put("total", total);
-        result.put("list", list);
+        if (total > 0) result.put("total", total);
+        if (list != null && list.size() > 0) result.put("list", list);
         return result;
     }
 
