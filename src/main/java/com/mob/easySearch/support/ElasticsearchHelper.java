@@ -146,8 +146,8 @@ public class ElasticsearchHelper {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q,
-                                           Map<String, Object[]> filters, Set<String> matchField,
-                                           Table<String, String, Object> ranges) {
+                                     Map<String, Object[]> filters, Set<String> matchField,
+                                     Table<String, String, Object> ranges) {
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -307,10 +307,18 @@ public class ElasticsearchHelper {
             list.addAll(result(topHits));
         }
 
-        Set<Map<String, Object>> sets = Sets.newLinkedHashSet(list);
+        Set<String> hashcode = Sets.newHashSet();
+        Set<Map<String, Object>> sets = Sets.newLinkedHashSet();
+        for (Map<String, Object> _ : list) {
+            boolean contains = _ != null && hashcode.contains(_.toString());
+            if (_ != null && !contains) {
+                hashcode.add(_.toString());
+                sets.add(_);
+            }
+        }
         Map<String, Object> result = Maps.newHashMap();
-        if (sets != null && sets.size() > 0) result.put("total", total);
-        if (sets != null && sets.size() > 0) result.put("list", list);
+        if (sets != null && sets.size() > 0) result.put("total", sets.size());
+        if (sets != null && sets.size() > 0) result.put("list", sets);
         return result;
     }
 
