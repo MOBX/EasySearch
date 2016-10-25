@@ -191,4 +191,6 @@ curl -XGET 'http://127.0.0.1:8080/analyzers'
 `mvn clean package -DskipTests`
 
 ### 运行
-`nohup java -cp "/usr/lib/jvm/java-7-openjdk-amd64/lib:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib:/home/zxc/workspace/easySearch/conf/:/home/zxc/workspace/easySearch/lib/*:" com.mob.easySearch.EasySearchBoot > /dev/null  2>&1 &`
+```
+nohup java -cp "/usr/lib/jvm/java-7-openjdk-amd64/lib:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib:/home/zxc/workspace/easySearch/conf/:/home/zxc/workspace/easySearch/lib/*:" com.mob.easySearch.EasySearchBoot > /dev/null  2>&1 &
+```
