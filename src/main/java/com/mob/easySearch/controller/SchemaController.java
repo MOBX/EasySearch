@@ -7,7 +7,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.io.IOException;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -33,8 +32,9 @@ public class SchemaController extends BaseController {
     @RequestMapping(value = "/{indexName}/{indexType}/schema", produces = { "application/json" }, method = RequestMethod.POST)
     JSON schema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                 @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType,
-                @ApiParam(required = true, name = "fields", value = "索引shcema") Map<String, Map<String, Object>> fields) {
+                @ApiParam(required = true, name = "fields", value = "索引shcema") @RequestBody Map<String, Map<String, Object>> fields) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (fields == null || fields.size() == 0) return fail("索引shcema为空");
 
         try {
             es.dropIndex(indexName);
@@ -58,8 +58,21 @@ public class SchemaController extends BaseController {
             GetMappingsResponse mappingsRes = es.getMapping(indexName, indexType);
             Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
             return ok(sourceMap.get("properties"));
-        } catch (IOException e) {
-            _.error("getSchema IOException!", e);
+        } catch (Exception e) {
+            _.error("getSchema Exception!", e);
+        }
+        return fail();
+    }
+
+    @ResponseBody
+    @ApiOperation(value = "GET all Schema", httpMethod = "GET", response = JsonResult.class, notes = "全部Schema定义")
+    @RequestMapping(value = "/schemas", produces = { "application/json" }, method = RequestMethod.GET)
+    JSON allSchema() {
+        try {
+            Map<String, Object> sourceMap = es.allMapping();
+            return ok(sourceMap);
+        } catch (Exception e) {
+            _.error("allSchema Exception!", e);
         }
         return fail();
     }

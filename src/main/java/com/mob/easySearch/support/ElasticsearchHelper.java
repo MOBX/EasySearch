@@ -31,6 +31,8 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.hppc.ObjectLookupContainer;
+import org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.settings.Settings;
@@ -373,6 +375,33 @@ public class ElasticsearchHelper {
     public GetMappingsResponse getMapping(String indexName, String indexType) {
         GetMappingsRequest mappingsRequest = new GetMappingsRequest().indices(indexName).types(indexType);
         return getClient().admin().indices().getMappings(mappingsRequest).actionGet();
+    }
+
+    public GetMappingsResponse getMapping() {
+        GetMappingsRequest mappingsRequest = new GetMappingsRequest();
+        return getClient().admin().indices().getMappings(mappingsRequest).actionGet();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> allMapping() {
+        Map<String, Object> map = Maps.newLinkedHashMap();
+        try {
+            GetMappingsResponse mappingsRes = getMapping();
+            ObjectLookupContainer<String> indexNames = mappingsRes.mappings().keys();
+            for (ObjectCursor<String> indexName : indexNames) {
+                if (com.lamfire.utils.StringUtils.contains(indexName.value, "marvel")) continue;
+                map.put(indexName.value, Maps.newLinkedHashMap());
+                ObjectLookupContainer<String> indexTypes = mappingsRes.mappings().get(indexName.value).keys();
+                for (ObjectCursor<String> indexType : indexTypes) {
+                    if (com.lamfire.utils.StringUtils.contains(indexType.value, "marvel")) continue;
+                    Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName.value).get(indexType.value).getSourceAsMap();
+                    ((Map<String, Object>) map.get(indexName.value)).put(indexType.value, sourceMap.get("properties"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return map;
     }
 
     /**

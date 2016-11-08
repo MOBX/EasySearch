@@ -25,7 +25,12 @@ public class ElasticsearchHelperTest {
         // getSchema();
         // index();
         // analyzer();
-        query();
+        // query();
+        allSchema();
+    }
+
+    static void allSchema() {
+        System.out.println(es.allMapping());
     }
 
     // 创建schema
