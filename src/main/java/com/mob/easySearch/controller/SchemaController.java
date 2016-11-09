@@ -37,7 +37,7 @@ public class SchemaController extends BaseController {
         if (fields == null || fields.size() == 0) return fail("索引shcema为空");
 
         try {
-            es.dropIndex(indexName);
+            if (es.existsIndex(indexName)) es.dropIndex(indexName);
             if (!es.existsIndex(indexName)) es.createIndex(indexName);
             es.createMapping(indexName, indexType, fields);
             return ok();
@@ -53,6 +53,7 @@ public class SchemaController extends BaseController {
     JSON getSchema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                    @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (!es.existsIndex(indexName)) return fail("索引未定义");
 
         try {
             GetMappingsResponse mappingsRes = es.getMapping(indexName, indexType);

@@ -286,13 +286,20 @@ public class ElasticsearchHelper {
             if (allFields.contains(agg)) aggList.add(agg);
         }
         TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(0);
-        for (String aggStr : aggList) {
-            termsBuilder.field(aggStr);
+        // 使用term field聚合
+        if (aggList.size() == 1) termsBuilder.field(aggList.get(0));
+        // 使用term script聚合
+        if (aggList.size() > 1) {
+            List<String> _aggList = Lists.newArrayList();
+            for (String aggStr : aggList) {
+                _aggList.add("doc." + aggStr + ".value");
+            }
+            termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"-\")");
         }
         search.addAggregation(termsBuilder//
         .subAggregation(AggregationBuilders.topHits("top-tags-record")//
-        .setSize(1)//
         .setFetchSource(allFields.toArray(new String[] {}), null)));
+        search.setSize(1);
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
@@ -564,9 +571,10 @@ public class ElasticsearchHelper {
 
                 if (StringUtils.isEmpty(type)) type = "string";
                 mapping.startObject(name).field("type", type).field("store", store);
-                if (analyzed) mapping.field("index", "not_analyzed");
+                if (!analyzed) mapping.field("index", "not_analyzed");
                 if (searched) mapping.field("searched", searched);
                 if (StringUtils.isNotEmpty(analyzer)) mapping.field("analyzer", analyzer);
+                if (indexed.get("copy_to") != null) mapping.field("copy_to", indexed.get("copy_to"));
                 mapping.endObject();
             }
             mapping.endObject().endObject().endObject();

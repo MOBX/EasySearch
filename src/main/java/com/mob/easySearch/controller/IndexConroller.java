@@ -37,7 +37,8 @@ public class IndexConroller extends BaseController {
     @PathVariable("indexType")
     final String indexType, @RequestBody Object... data) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
-        if (data == null || data.length == 0) return ok();
+        if (data == null || data.length == 0) return fail("文档文库");
+        if (!es.existsIndex(indexName)) return fail("索引未定义");
 
         for (Object source : data) {
             final Map<String, Object> _source = JSON.fromJavaObject(source);
@@ -65,6 +66,8 @@ public class IndexConroller extends BaseController {
     final String indexName, @ApiParam(required = true, name = "indexType", value = "文档名称")
     @PathVariable("indexType")
     final String indexType, @RequestParam() MultipartFile jsonfile) throws Exception {
+        if (!es.existsIndex(indexName)) return fail("索引未定义");
+
         Integer count = es.bulk(indexName, indexType, convert(jsonfile));
         return ok(count);
     }
@@ -84,6 +87,7 @@ public class IndexConroller extends BaseController {
     JSON alias(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (!es.existsIndex(indexName)) return fail("索引未定义");
 
         return ok();
     }

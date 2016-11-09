@@ -27,7 +27,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
     }, 
     "p_url": {
         "type": "string", 
-        "index": "not_analyzed"
+        "analyzed": false
     }, 
     "tagName": {
         "type": "string", 
@@ -54,7 +54,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
     }, 
     "url": {
         "type": "string", 
-        "index": "not_analyzed"
+        "analyzed": false
     }, 
     "website_id": {
         "type": "string", 
