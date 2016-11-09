@@ -228,9 +228,10 @@ public class ElasticsearchHelper {
      * @return
      */
     @SuppressWarnings({ "unchecked" })
-    public Map<String, Object> aggregation(String indexName, String indexType, int pageno, int pagesize, String q,
+    public Map<String, Object> aggr(String indexName, String indexType, int pageno, int pagesize, String q,
                                            Map<String, Object[]> filters, Set<String> matchField,
-                                           Set<String> aggregation, Table<String, String, Object> ranges) {
+                                           Set<String> aggregation, Table<String, String, Object> ranges,
+                                           boolean top_hits) {
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -299,7 +300,7 @@ public class ElasticsearchHelper {
         search.addAggregation(termsBuilder//
         .subAggregation(AggregationBuilders.topHits("top-tags-record")//
         .setFetchSource(allFields.toArray(new String[] {}), null)));
-        search.setSize(1);
+        if (top_hits) search.setSize(1);
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;

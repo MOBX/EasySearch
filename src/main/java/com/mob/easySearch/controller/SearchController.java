@@ -39,32 +39,36 @@ public class SearchController extends BaseController {
                 @ApiParam(required = false, name = "pagesize", value = "每页数量") @RequestParam(value = "pagesize", defaultValue = "30") Integer pagesize,
                 @ApiParam(required = true, name = "keywords", value = "关键词") @RequestParam("keywords") String keywords) {
         access.info("[SearchController parameterMap]:" + JSON.toJSONString(request.getParameterMap()));
-        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
         Set<String> field = Sets.newHashSet();
         Set<String> aggregation = Sets.newHashSet();
-        if (request.getParameterValues("field") != null) {
-            field = Sets.newHashSet(request.getParameterValues("field"));
-        }
-        if (request.getParameterValues("distinct") != null) {
-            aggregation = Sets.newHashSet(request.getParameterValues("distinct"));
-        }
         Map<String, Object[]> filter = Maps.newHashMap();
         Table<String, String, Object> ranges = HashBasedTable.create();
-        for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-            if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
-            if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno")
-                && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize")
-                && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
-                && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct")
-                && !StringUtils.equalsIgnoreCase(entry.getKey(), "field")
-                && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
-                filter.put(entry.getKey(), entry.getValue());
+        boolean top_hits = true;
+        try {
+            if (request.getParameterValues("field") != null) field = Sets.newHashSet(request.getParameterValues("field"));
+            if (request.getParameterValues("distinct") != null) aggregation = Sets.newHashSet(request.getParameterValues("distinct"));
+            for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+                if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
+                if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "field")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "top_hits")
+                    && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
+                    filter.put(entry.getKey(), entry.getValue());
+                }
+                if (customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
+                    String r = StringUtils.substringBeforeLast(entry.getKey(), "_");
+                    String c = StringUtils.substringAfterLast(entry.getKey(), "_");
+                    ranges.put(r, c, entry.getValue()[0]);
+                }
+                if (StringUtils.equalsIgnoreCase(entry.getKey(), "top_hits")) top_hits = Boolean.parseBoolean(entry.getValue()[0]);
             }
-            if (customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
-                String r = StringUtils.substringBeforeLast(entry.getKey(), "_");
-                String c = StringUtils.substringAfterLast(entry.getKey(), "_");
-                ranges.put(r, c, entry.getValue()[0]);
-            }
+        } catch (Exception e) {
+            _.error("es.queryString param error!", e);
+            return fail("参数不支持");
         }
         Map<String, Object> result = Maps.newHashMap();
         try {
@@ -72,12 +76,11 @@ public class SearchController extends BaseController {
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
-                result = es.aggregation(indexName, indexType, pageno, pagesize, keywords, filter, field, aggregation,
-                                        ranges);
+                result = es.aggr(indexName, indexType, pageno, pagesize, keywords, //
+                                 filter, field, aggregation, ranges, top_hits);
             }
-            return ok(result);
         } catch (Exception e) {
-            _.error("es.queryString error!", e);
+            _.error("es.queryString search error!", e);
         }
         return ok(result);
     }

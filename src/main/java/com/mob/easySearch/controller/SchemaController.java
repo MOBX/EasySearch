@@ -33,7 +33,7 @@ public class SchemaController extends BaseController {
     JSON schema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                 @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType,
                 @ApiParam(required = true, name = "fields", value = "索引shcema") @RequestBody Map<String, Map<String, Object>> fields) {
-        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
         if (fields == null || fields.size() == 0) return fail("索引shcema为空");
 
         try {
@@ -44,7 +44,7 @@ public class SchemaController extends BaseController {
         } catch (Exception e) {
             _.error("create schema Exception!", e);
         }
-        return fail();
+        return fail("参数错误");
     }
 
     @ResponseBody
@@ -52,7 +52,7 @@ public class SchemaController extends BaseController {
     @RequestMapping(value = "/{indexName}/{indexType}/schema", produces = { "application/json" }, method = RequestMethod.GET)
     JSON getSchema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                    @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
-        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail();
+        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
         if (!es.existsIndex(indexName)) return fail("索引未定义");
 
         try {
@@ -62,7 +62,7 @@ public class SchemaController extends BaseController {
         } catch (Exception e) {
             _.error("getSchema Exception!", e);
         }
-        return fail();
+        return fail("参数错误");
     }
 
     @ResponseBody
@@ -75,6 +75,6 @@ public class SchemaController extends BaseController {
         } catch (Exception e) {
             _.error("allSchema Exception!", e);
         }
-        return fail();
+        return fail("参数错误");
     }
 }

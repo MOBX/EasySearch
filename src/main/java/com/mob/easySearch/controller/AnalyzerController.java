@@ -7,6 +7,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,16 +28,23 @@ public class AnalyzerController extends BaseController {
     @ApiOperation(value = "analyzer text", httpMethod = "GET", response = JsonResult.class, notes = "分词接口")
     @RequestMapping(value = "/analyzer", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzer(@ApiParam(required = true, name = "text", value = "文本", defaultValue = "hello world!") @RequestParam("text") String text,
-                  @ApiParam(required = false, name = "analyzer", value = "分词器", defaultValue = "ik") @RequestParam("text") String analyzer) {
-        if (StringUtils.isEmpty(text)) return fail();
+                  @ApiParam(required = false, name = "analyzer", value = "分词器", defaultValue = "ik") @RequestParam("analyzer") String analyzer) {
+        if (StringUtils.isEmpty(text)) return fail("参数错误");
 
-        AnalyzeResponse res = es.analyzer("mob_news", text, "ik");
+        if (!es.existsIndex("easy_search")) {
+            es.createIndex("easy_search");
+            es.createMapping("easy_search", "easy_search", new HashMap<String, Map<String, Object>>());
+        }
+        AnalyzeResponse res = es.analyzer("easy_search", text, analyzer);
         return ok(res.getTokens());
     }
 
     @ApiOperation(value = "list all analyzer", httpMethod = "GET", response = JsonResult.class, notes = "支持的全部分词器")
     @RequestMapping(value = "/analyzers", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzers() {
-        return ok();
+        return ok(new Object[][] { {
+                "analyzer",
+                new String[] { "IKAnalyzer", "StandardAnalyzer", "SmartChineseAnalyzer", "SimpleAnalyzer",
+                        "StopAnalyzer", "WhitespaceAnalyzer" } } });
     }
 }

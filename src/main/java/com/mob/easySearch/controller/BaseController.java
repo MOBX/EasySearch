@@ -41,25 +41,30 @@ public class BaseController {
         es = new ElasticsearchHelper(clusterName, nodeArray);
     }
 
-    public static JSON fail() {
-        return result(900, null);
+    public static JSON fail(String msg) {
+        return result(900, null, msg);
     }
 
     public static JSON ok() {
-        return result(200, null);
-    }
-
-    public static JSON fail(Object data) {
-        return result(900, data);
+        return result(200, null, "");
     }
 
     public static JSON ok(Object data) {
-        return result(200, data);
+        return result(200, data, "");
     }
 
-    public static JSON result(int status, Object children) {
+    public JSON ok(Object[][] keyValues) {
+        JSON data = new JSON();
+        for (int i = 0; i < keyValues.length; i++) {
+            data.put((String) keyValues[i][0], keyValues[i][1]);
+        }
+        return result(200, data, "");
+    }
+
+    public static JSON result(int status, Object children, String msg) {
         JSON json = new JSON();
         json.put("status", status);
+        if (StringUtils.isNotEmpty(msg)) json.put("msg", msg);
         if (children != null) json.put("data", children);
         return json;
     }
