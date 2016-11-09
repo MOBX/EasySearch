@@ -8,18 +8,19 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.elasticsearch.common.collect.Maps;
 import org.springframework.web.bind.annotation.*;
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import com.lamfire.json.JSON;
-import com.lamfire.utils.Sets;
 import com.lamfire.utils.StringUtils;
+import com.mob.easySearch.support.IteratorWrapper;
+import com.mob.easySearch.support.IteratorWrapper.IteratorHandler;
 import com.mob.easySearch.support.JsonResult;
 
 /**
@@ -30,24 +31,33 @@ import com.mob.easySearch.support.JsonResult;
 @Api(value = "search", description = "搜索服务")
 public class SearchController extends BaseController {
 
+    @SuppressWarnings("unchecked")
     @ResponseBody
     @ApiOperation(value = "do search", httpMethod = "GET", response = JsonResult.class, notes = "搜索接口")
     @RequestMapping(value = "/{indexName}/{indexType}/search", produces = { "application/json" }, method = RequestMethod.GET)
     JSON search(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                 @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType,
-                @ApiParam(required = false, name = "pageno", value = "分页页码") @RequestParam(value = "pageno", defaultValue = "1") Integer pageno,
-                @ApiParam(required = false, name = "pagesize", value = "每页数量") @RequestParam(value = "pagesize", defaultValue = "30") Integer pagesize,
+                @ApiParam(required = false, name = "pageno", value = "分页页码")
+                @RequestParam(value = "pageno", defaultValue = "1")
+                final Integer pageno, @ApiParam(required = false, name = "pagesize", value = "每页数量")
+                @RequestParam(value = "pagesize", defaultValue = "30")
+                final Integer pagesize,
                 @ApiParam(required = true, name = "keywords", value = "关键词") @RequestParam("keywords") String keywords) {
         access.info("[SearchController parameterMap]:" + JSON.toJSONString(request.getParameterMap()));
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
+        // if (!es.existsIndex(indexName)) return fail("索引未定义");
+
         Set<String> field = Sets.newHashSet();
-        Set<String> aggregation = Sets.newHashSet();
-        Map<String, Object[]> filter = Maps.newHashMap();
+        Set<String> aggregation = Sets.newLinkedHashSet();
+        Map<String, Object[]> filter = Maps.newLinkedHashMap();
         Table<String, String, Object> ranges = HashBasedTable.create();
         boolean top_hits = true;
         try {
             if (request.getParameterValues("field") != null) field = Sets.newHashSet(request.getParameterValues("field"));
-            if (request.getParameterValues("distinct") != null) aggregation = Sets.newHashSet(request.getParameterValues("distinct"));
+            if (request.getParameterValues("distinct") != null) {
+                for (String value : request.getParameterValues("distinct"))
+                    aggregation.add(value);
+            }
             for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
                 if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
                 if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno")
@@ -76,8 +86,25 @@ public class SearchController extends BaseController {
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
-                result = es.aggr(indexName, indexType, pageno, pagesize, keywords, //
-                                 filter, field, aggregation, ranges, top_hits);
+                Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
+                                                      field, aggregation, ranges, top_hits);
+                result.put("total", _result.get("total"));
+                result.put("pageno", pageno);
+                result.put("pagesize", pagesize);
+                IteratorWrapper.pagination((Set<Map<String, Object>>) _result.get("list"), pagesize)//
+                .iterator(new IteratorHandler<Map<String, Object>>() {
+
+                    @Override
+                    public boolean handle(int pageNum, List<Map<String, Object>> subData, Object... params) {
+                        int pageno = ((Integer) params[0]).intValue();
+                        Map<String, Object> result = (Map<String, Object>) params[1];
+                        if (pageNum + 1 == pageno) {
+                            if (subData != null && subData.size() > 0) result.put("list", subData);
+                            return false;
+                        }
+                        return true;
+                    }
+                }, pageno, result);
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);

@@ -209,8 +209,10 @@ public class ElasticsearchHelper {
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);
         Map<String, Object> result = Maps.newHashMap();
-        if (total > 0) result.put("total", total);
-        if (list != null && list.size() > 0) result.put("list", list);
+        result.put("list", (list != null && list.size() > 0) ? list : Lists.newArrayList());
+        result.put("pageno", pageno);
+        result.put("pagesize", pagesize);
+        result.put("total", total);
         return result;
     }
 
@@ -228,10 +230,9 @@ public class ElasticsearchHelper {
      * @return
      */
     @SuppressWarnings({ "unchecked" })
-    public Map<String, Object> aggr(String indexName, String indexType, int pageno, int pagesize, String q,
-                                           Map<String, Object[]> filters, Set<String> matchField,
-                                           Set<String> aggregation, Table<String, String, Object> ranges,
-                                           boolean top_hits) {
+    public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
+                                    Set<String> matchField, Set<String> aggregation,
+                                    Table<String, String, Object> ranges, boolean top_hits) {
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -281,6 +282,8 @@ public class ElasticsearchHelper {
         .setSize(0)// size为0,结果返回全部聚合查询数据,也就是Global
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
+        // 聚合的key
+        String key = "";
         // 按字段去重
         List<String> aggList = Lists.newArrayList();
         for (String agg : aggregation) {
@@ -288,13 +291,17 @@ public class ElasticsearchHelper {
         }
         TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(0);
         // 使用term field聚合
-        if (aggList.size() == 1) termsBuilder.field(aggList.get(0));
+        if (aggList.size() == 1) {
+            key = aggList.get(0);
+            termsBuilder.field(key);
+        }
         // 使用term script聚合
         if (aggList.size() > 1) {
             List<String> _aggList = Lists.newArrayList();
             for (String aggStr : aggList) {
                 _aggList.add("doc." + aggStr + ".value");
             }
+            key = StringUtils.join(aggList, "-");
             termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"-\")");
         }
         search.addAggregation(termsBuilder//
@@ -314,7 +321,14 @@ public class ElasticsearchHelper {
         List<Map<String, Object>> list = Lists.newLinkedList();
         for (Terms.Bucket bucket : collection) {
             TopHits topHits = bucket.getAggregations().get("top-tags-record");
-            list.addAll(result(topHits));
+            if (top_hits) {
+                Map<String, Object> _data = Maps.newHashMap();
+                _data.put(key, bucket.getKey());
+                _data.put("hits", result(topHits));
+                list.add(_data);
+            } else {
+                list.addAll(result(topHits));
+            }
         }
 
         Set<String> hashcode = Sets.newHashSet();
@@ -327,8 +341,8 @@ public class ElasticsearchHelper {
             }
         }
         Map<String, Object> result = Maps.newHashMap();
-        if (sets != null && sets.size() > 0) result.put("total", sets.size());
-        if (sets != null && sets.size() > 0) result.put("list", sets);
+        result.put("total", (sets != null && sets.size() > 0) ? sets.size() : 0);
+        result.put("list", (sets != null && sets.size() > 0) ? sets : Sets.newHashSet());
         return result;
     }
 
