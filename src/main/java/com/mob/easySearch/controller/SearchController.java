@@ -43,7 +43,7 @@ public class SearchController extends BaseController {
                 @RequestParam(value = "pagesize", defaultValue = "30")
                 final Integer pagesize,
                 @ApiParam(required = true, name = "keywords", value = "关键词") @RequestParam("keywords") String keywords) {
-        access.info("[SearchController parameterMap]:" + JSON.toJSONString(request.getParameterMap()));
+        access.info("[SearchController parameterMap start]:" + JSON.toJSONString(request.getParameterMap()));
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
         // if (!es.existsIndex(indexName)) return fail("索引未定义");
 
@@ -82,7 +82,6 @@ public class SearchController extends BaseController {
         }
         Map<String, Object> result = Maps.newHashMap();
         try {
-            access.info("[SearchController]: filter=" + JSON.toJSONString(filter) + ",field=" + field);
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
@@ -91,24 +90,28 @@ public class SearchController extends BaseController {
                 result.put("total", _result.get("total"));
                 result.put("pageno", pageno);
                 result.put("pagesize", pagesize);
-                IteratorWrapper.pagination((Set<Map<String, Object>>) _result.get("list"), pagesize)//
-                .iterator(new IteratorHandler<Map<String, Object>>() {
+                Set<Map<String, Object>> _list = (Set<Map<String, Object>>) _result.get("list");
+                if (_list != null && _list.size() > 0) {
+                    IteratorWrapper.pagination(_list, pagesize)//
+                    .iterator(new IteratorHandler<Map<String, Object>>() {
 
-                    @Override
-                    public boolean handle(int pageNum, List<Map<String, Object>> subData, Object... params) {
-                        int pageno = ((Integer) params[0]).intValue();
-                        Map<String, Object> result = (Map<String, Object>) params[1];
-                        if (pageNum + 1 == pageno) {
-                            if (subData != null && subData.size() > 0) result.put("list", subData);
-                            return false;
+                        @Override
+                        public boolean handle(int pageNum, List<Map<String, Object>> subData, Object... params) {
+                            int pageno = ((Integer) params[0]).intValue();
+                            Map<String, Object> result = (Map<String, Object>) params[1];
+                            if (pageNum + 1 == pageno) {
+                                if (subData != null && subData.size() > 0) result.put("list", subData);
+                                return false;
+                            }
+                            return true;
                         }
-                        return true;
-                    }
-                }, pageno, result);
+                    }, pageno, result);
+                }
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);
         }
+        access.info("[SearchController parameterMap end]:" + JSON.toJSONString(request.getParameterMap()));
         return ok(result);
     }
 }

@@ -22,18 +22,19 @@ import com.mob.easySearch.support.ElasticsearchHelper;
 @Component
 public class BaseController {
 
-    protected static final Logger        _      = LoggerFactory.getLogger(BaseController.class);
-    protected static final Logger        access = LoggerFactory.getLogger("ACCESS");
+    protected static final Logger        _                = LoggerFactory.getLogger(BaseController.class);
+    protected static final Logger        access           = LoggerFactory.getLogger("ACCESS");
 
-    protected static ElasticsearchHelper es;
-
+    @Autowired
+    protected HttpServletRequest         request;
     @Value("${es.cluster.name}")
     private String                       clusterName;
     @Value("${es.nodes}")
     private String                       nodes;
 
-    @Autowired
-    protected HttpServletRequest         request;
+    protected static ElasticsearchHelper es;
+
+    protected final static String        AGGR_SESSION_KEY = "AGGR_%s_%s_%s_%s_%s_%s_%s";
 
     @PostConstruct
     private void init() {

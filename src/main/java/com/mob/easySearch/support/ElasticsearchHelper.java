@@ -150,6 +150,7 @@ public class ElasticsearchHelper {
     public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q,
                                      Map<String, Object[]> filters, Set<String> matchField,
                                      Table<String, String, Object> ranges) {
+        _.info("search query start");
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -233,6 +234,7 @@ public class ElasticsearchHelper {
     public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
                                     Set<String> matchField, Set<String> aggregation,
                                     Table<String, String, Object> ranges, boolean top_hits) {
+        _.info("search aggregation start");
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
