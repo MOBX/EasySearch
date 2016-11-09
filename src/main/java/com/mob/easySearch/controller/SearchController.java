@@ -46,7 +46,7 @@ public class SearchController extends BaseController {
         Set<String> aggregation = Sets.newLinkedHashSet();
         Map<String, Object[]> filter = Maps.newLinkedHashMap();
         Table<String, String, Object> ranges = HashBasedTable.create();
-        boolean topOnly = true;
+        boolean topOnly = false;
         try {
             if (request.getParameterValues("field") != null) field = Sets.newHashSet(request.getParameterValues("field"));
             if (request.getParameterValues("distinct") != null) {

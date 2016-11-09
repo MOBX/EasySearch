@@ -47,6 +47,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
+import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import com.google.common.collect.*;
@@ -225,7 +226,7 @@ public class ElasticsearchHelper {
      * 2 使用copy_to方法，合并两个字段，创建出一个新的字段，对新字段执行单个字段的聚合
      * </pre>
      * 
-     * @param topOnly
+     * @param topOnly(true=仅显示一个,false=显示多个)
      * @param indexName
      * @param indexType
      * @param pageno
@@ -312,10 +313,11 @@ public class ElasticsearchHelper {
             key = StringUtils.join(aggList, "-");
             termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"-\")");
         }
-        search.addAggregation(termsBuilder//
-        .subAggregation(AggregationBuilders.topHits("top-tags-record")//
-        .setFetchSource(allFields.toArray(new String[] {}), null)));
-        if (topOnly) search.setSize(1);
+
+        TopHitsBuilder topHitsBuilder = AggregationBuilders.topHits("top-tags-record")//
+        .setFetchSource(allFields.toArray(new String[] {}), null);
+        if (topOnly) topHitsBuilder.setSize(1);
+        search.addAggregation(termsBuilder.subAggregation(topHitsBuilder));
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
@@ -330,12 +332,12 @@ public class ElasticsearchHelper {
         for (Terms.Bucket bucket : collection) {
             TopHits topHits = bucket.getAggregations().get("top-tags-record");
             if (topOnly) {
+                list.addAll(result(topHits));
+            } else {
                 Map<String, Object> _data = Maps.newHashMap();
                 _data.put(key, bucket.getKey());
                 _data.put("hits", result(topHits));
                 list.add(_data);
-            } else {
-                list.addAll(result(topHits));
             }
         }
 
