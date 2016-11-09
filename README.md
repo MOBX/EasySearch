@@ -25,13 +25,15 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
     "title": {
         "type": "string"
     }, 
-    "p_url": {
+    "type": {
         "type": "string", 
-        "analyzed": false
+        "analyzed": false,
+        "copy_to": "type_and_tagName"
     }, 
     "tagName": {
         "type": "string", 
-        "index_analyzer": "whitespace"
+        "index_analyzer": "whitespace",
+        "copy_to": "type_and_tagName"
     }, 
     "keyWords": {
         "type": "string", 
@@ -59,6 +61,10 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
     "website_id": {
         "type": "string", 
         "index_analyzer": "whitespace"
+    }, 
+    "type_and_tagName": {
+        "type": "string", 
+        "analyzed": false
     }
 }'
 #return
@@ -131,28 +137,34 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '
 
 ####1. search 
 ```
-#普通的全文检索,keywords为空按照得分全部查询
+#普通的全文检索,keywords为空按照得分全部查询(支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords'
 ```
 
 ```
-#指定索引字段的全文检索
+#指定索引字段的全文检索(支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&field=field'
 ```
 
 ```
-#指定某些字段完全匹配的全文检索
+#指定某些字段完全匹配的全文检索(支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&xxx=yyy'
 ```
 
 ```
-#指定字段区间范围查询的全文检索(在正常字段后面加上下划线 gt:大于,lt:小于,gte:大于或等于,lte:小于或等于)
+#指定字段区间范围查询的全文检索(在正常字段后面加上下划线 gt:大于,lt:小于,gte:大于或等于,lte:小于或等于;支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&xxx_gt=yyy&xxx_gt=yyy&zzz_lt=rrr'
 ```
 
 ```
-#指定字段的聚合查询全文检索(其中distinct为索引中任意字段,distinct字段为聚合字段,可以支持多个同时聚合)
+#指定字段的聚合查询全文检索(其中distinct为索引中任意字段;distinct字段为聚合字段,可以支持多个同时聚合;支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxxx'
+```
+
+```
+#指定字段的聚合查询全文检索(其中distinct为索引中任意字段;distinct字段为聚合字段注意多个字段的排序,可以支持多个同时聚合;topOnly是否仅显示顶部1个,默认false;支持分页)
+#多字段聚合说明(使用脚本合并字段;copy_to方法合并两个字段,创建出一个新的字段,对新字段执行单个字段的聚合;建议使用第二个,本接口已支持,需要在schema定义中指明)
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxx1&distinct=xxx2&topOnly=false'
 ```
 
 ```
