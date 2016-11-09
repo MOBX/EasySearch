@@ -14,9 +14,7 @@ import java.util.Map.Entry;
 import org.elasticsearch.common.collect.Maps;
 import org.springframework.web.bind.annotation.*;
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
+import com.google.common.collect.*;
 import com.lamfire.json.JSON;
 import com.lamfire.utils.StringUtils;
 import com.mob.easySearch.support.IteratorWrapper;
@@ -37,11 +35,8 @@ public class SearchController extends BaseController {
     @RequestMapping(value = "/{indexName}/{indexType}/search", produces = { "application/json" }, method = RequestMethod.GET)
     JSON search(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
                 @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType,
-                @ApiParam(required = false, name = "pageno", value = "分页页码")
-                @RequestParam(value = "pageno", defaultValue = "1")
-                final Integer pageno, @ApiParam(required = false, name = "pagesize", value = "每页数量")
-                @RequestParam(value = "pagesize", defaultValue = "30")
-                final Integer pagesize,
+                @ApiParam(required = false, name = "pageno", value = "分页页码") @RequestParam(value = "pageno", defaultValue = "1") Integer pageno,
+                @ApiParam(required = false, name = "pagesize", value = "每页数量") @RequestParam(value = "pagesize", defaultValue = "30") Integer pagesize,
                 @ApiParam(required = true, name = "keywords", value = "关键词") @RequestParam("keywords") String keywords) {
         access.info("[SearchController parameterMap start]:" + JSON.toJSONString(request.getParameterMap()));
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
@@ -106,6 +101,8 @@ public class SearchController extends BaseController {
                             return true;
                         }
                     }, pageno, result);
+                }else {
+                    result.put("list", Lists.newArrayList());
                 }
             }
         } catch (Exception e) {

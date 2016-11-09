@@ -49,13 +49,10 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.sort.SortOrder;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
+import com.google.common.collect.*;
 import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
 import com.lamfire.logger.LoggerFactory;
-import com.lamfire.utils.Lists;
 
 /**
  * @author zxc Jun 13, 2016 4:20:25 PM
