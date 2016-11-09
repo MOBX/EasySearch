@@ -77,6 +77,11 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/schema'  
 ```
 
+```
+#索引库全部schema定义查询
+curl -XGET 'http://127.0.0.1:8080/schemas'  
+```
+
 ####2. index  文档内容
 
 ```
