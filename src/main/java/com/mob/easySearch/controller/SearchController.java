@@ -46,7 +46,7 @@ public class SearchController extends BaseController {
         Set<String> aggregation = Sets.newLinkedHashSet();
         Map<String, Object[]> filter = Maps.newLinkedHashMap();
         Table<String, String, Object> ranges = HashBasedTable.create();
-        boolean top_hits = true;
+        boolean topOnly = true;
         try {
             if (request.getParameterValues("field") != null) field = Sets.newHashSet(request.getParameterValues("field"));
             if (request.getParameterValues("distinct") != null) {
@@ -60,7 +60,7 @@ public class SearchController extends BaseController {
                     && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
                     && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct")
                     && !StringUtils.equalsIgnoreCase(entry.getKey(), "field")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "top_hits")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")
                     && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
                     filter.put(entry.getKey(), entry.getValue());
                 }
@@ -69,7 +69,7 @@ public class SearchController extends BaseController {
                     String c = StringUtils.substringAfterLast(entry.getKey(), "_");
                     ranges.put(r, c, entry.getValue()[0]);
                 }
-                if (StringUtils.equalsIgnoreCase(entry.getKey(), "top_hits")) top_hits = Boolean.parseBoolean(entry.getValue()[0]);
+                if (StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")) topOnly = Boolean.parseBoolean(entry.getValue()[0]);
             }
         } catch (Exception e) {
             _.error("es.queryString param error!", e);
@@ -81,7 +81,7 @@ public class SearchController extends BaseController {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
                 Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
-                                                      field, aggregation, ranges, top_hits);
+                                                      field, aggregation, ranges, topOnly);
                 result.put("total", _result.get("total"));
                 result.put("pageno", pageno);
                 result.put("pagesize", pagesize);

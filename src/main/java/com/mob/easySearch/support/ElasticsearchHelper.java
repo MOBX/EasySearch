@@ -217,6 +217,15 @@ public class ElasticsearchHelper {
     /**
      * 聚合查询
      * 
+     * <pre>
+     * 多字段聚合
+     * 通常情况，terms聚合都是仅针对于一个字段的聚合。因为该聚合是需要把词条放入一个哈希表中，如果多个字段就会造成n^2的内存消耗。
+     * 不过，对于多字段，ES也提供了下面两种方式：
+     * 1 使用脚本合并字段
+     * 2 使用copy_to方法，合并两个字段，创建出一个新的字段，对新字段执行单个字段的聚合
+     * </pre>
+     * 
+     * @param topOnly
      * @param indexName
      * @param indexType
      * @param pageno
@@ -230,7 +239,7 @@ public class ElasticsearchHelper {
     @SuppressWarnings({ "unchecked" })
     public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
                                     Set<String> matchField, Set<String> aggregation,
-                                    Table<String, String, Object> ranges, boolean top_hits) {
+                                    Table<String, String, Object> ranges, boolean topOnly) {
         _.info("search aggregation start");
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
@@ -306,7 +315,7 @@ public class ElasticsearchHelper {
         search.addAggregation(termsBuilder//
         .subAggregation(AggregationBuilders.topHits("top-tags-record")//
         .setFetchSource(allFields.toArray(new String[] {}), null)));
-        if (top_hits) search.setSize(1);
+        if (topOnly) search.setSize(1);
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
@@ -320,7 +329,7 @@ public class ElasticsearchHelper {
         List<Map<String, Object>> list = Lists.newLinkedList();
         for (Terms.Bucket bucket : collection) {
             TopHits topHits = bucket.getAggregations().get("top-tags-record");
-            if (top_hits) {
+            if (topOnly) {
                 Map<String, Object> _data = Maps.newHashMap();
                 _data.put(key, bucket.getKey());
                 _data.put("hits", result(topHits));
@@ -330,6 +339,7 @@ public class ElasticsearchHelper {
             }
         }
 
+        // 集合去重
         Set<String> hashcode = Sets.newHashSet();
         Set<Map<String, Object>> sets = Sets.newLinkedHashSet();
         for (Map<String, Object> _ : list) {
