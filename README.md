@@ -158,11 +158,11 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&x
 
 ```
 #指定字段的聚合查询全文检索(其中distinct为索引中任意字段;distinct字段为聚合字段,可以支持多个同时聚合;支持分页)
-curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxxx'
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxxx&topOnly=true'
 ```
 
 ```
-#指定字段的聚合查询全文检索(其中distinct为索引中任意字段;distinct字段为聚合字段注意多个字段的排序,可以支持多个同时聚合;topOnly是否仅显示顶部1个,默认false;支持分页)
+#指定多字段的聚合查询全文检索,并显示聚合桶类集合(其中distinct为索引中任意字段;distinct字段为聚合字段注意多个字段的排序,可以支持多个同时聚合;topOnly是否仅显示顶部1个,默认false;支持分页)
 #多字段聚合说明(使用脚本合并字段;copy_to方法合并两个字段,创建出一个新的字段,对新字段执行单个字段的聚合;建议使用第二个,本接口已支持,需要在schema定义中指明)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxx1&distinct=xxx2&topOnly=false'
 ```
