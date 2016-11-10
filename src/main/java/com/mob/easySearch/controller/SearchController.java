@@ -101,7 +101,7 @@ public class SearchController extends BaseController {
                             return true;
                         }
                     }, pageno, result);
-                }else {
+                } else {
                     result.put("list", Lists.newArrayList());
                 }
             }

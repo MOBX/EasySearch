@@ -157,11 +157,6 @@ public class ElasticsearchHelper {
             Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
             Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
             allFields.addAll(_sourceMap.keySet());
-            // for (Entry<String, Object> entry : _sourceMap.entrySet()) {
-            // String field = entry.getKey();
-            // Map<String, Object> valueMap = (Map<String, Object>) entry.getValue();
-            // if (valueMap != null && valueMap.containsKey("searched")) fields.add(field);
-            // }
         } catch (Exception e) {
             _.error("queryString error!", e);
         }
