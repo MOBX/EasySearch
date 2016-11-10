@@ -37,7 +37,7 @@ public class ExportAndImportData {
     private static String              nodes;
     private static ElasticsearchHelper es;
 
-    private static long                keepAlive = 600000;
+    private static long                keepAlive = 60000000;
 
     static {
         pro = PropertiesUtils.load("application.properties", ExportAndImportData.class);
@@ -47,9 +47,13 @@ public class ExportAndImportData {
         es = new ElasticsearchHelper(clusterName, nodeArray);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        // List<String> data = Lists.newArrayList(5);
+        // data.add("zxc");
+        // FileUtils.writeLines(new File("/data/es/appgo.json"), "utf-8", data, true);
+
         // long total = new ExportAndImportData()//
-        // .exportData("/data/es/appgo.json", "appgo", "app_publisher_search_test_2");
+        // .exportData("/data/es/appgo.json", "appgo", "app_publisher_search");
         // System.out.println("---------------------> 共导出数据[" + total + "]条 <------------------------");
 
         long _total = new ExportAndImportData()//
@@ -59,7 +63,7 @@ public class ExportAndImportData {
 
     public long exportData(String filePath, String index, String indexType) {
         long total = 0;
-        int size = 100;
+        int size = 10000;
         try {
             Client client = es.getClient();
             TimeValue timeValue = new TimeValue(keepAlive);
@@ -73,6 +77,7 @@ public class ExportAndImportData {
             List<String> data = Lists.newArrayList(size);
             long _count = response.getHits().getTotalHits();
             for (; total < _count;) {
+                data.clear();
                 SearchResponse scrollResponse = client.prepareSearchScroll(scrollId) //
                 .setScroll(timeValue).execute().actionGet();
                 SearchHits hits = scrollResponse.getHits();
@@ -84,8 +89,8 @@ public class ExportAndImportData {
                     data.add(result);
                 }
                 System.out.println("总量" + _count + " 已经查到" + total);
+                FileUtils.writeLines(new File(filePath), "utf-8", data, true);
             }
-            FileUtils.writeLines(new File(filePath), "utf-8", data, true);
         } catch (Exception e) {
             e.printStackTrace();
         }
