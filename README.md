@@ -172,10 +172,7 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&d
 #多字段聚合说明(使用脚本合并字段;copy_to方法合并两个字段,创建出一个新的字段,对新字段执行单个字段的聚合;建议使用第二个,本接口已支持,需要在schema定义中指明)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&distinct=xxx1&distinct=xxx2&topOnly=false'
 ```
-
-```
 上述几种基础查询,可以任意组合来实现多种业务查询场景.
-```
 
 ###分词服务
 * text 	   文本内容
