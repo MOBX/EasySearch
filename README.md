@@ -1,5 +1,6 @@
 #通用搜索服务
 
+![image](https://github.com/MOBX/EasySearch/blob/master/src/main/resources/static/images/demo.png)
 
 ##约定说明
 * indexName 	索引名称命名空间
@@ -210,8 +211,6 @@ curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
 #获取服务目前支持的全部分词器
 curl -XGET 'http://127.0.0.1:8080/analyzers' 
 ```
-
-![image](https://github.com/MOBX/EasySearch/blob/master/src/main/resources/static/images/demo.png)
 
 ## 配置文件说明
 
