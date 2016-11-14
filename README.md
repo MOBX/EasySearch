@@ -211,6 +211,7 @@ curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
 curl -XGET 'http://127.0.0.1:8080/analyzers' 
 ```
 
+![image](https://github.com/MOBX/EasySearch/blob/master/src/main/resources/static/images/demo.png)
 
 ## 配置文件说明
 
