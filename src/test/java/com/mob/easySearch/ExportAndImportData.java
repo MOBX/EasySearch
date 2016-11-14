@@ -48,19 +48,23 @@ public class ExportAndImportData {
     }
 
     public static void main(String[] args) throws Exception {
-        // List<String> data = Lists.newArrayList(5);
-        // data.add("zxc");
-        // FileUtils.writeLines(new File("/data/es/appgo.json"), "utf-8", data, true);
-
         // long total = new ExportAndImportData()//
-        // .exportData("/data/es/appgo.json", "appgo", "app_publisher_search");
+        // .exportData("/data/es/appgo.json", "easy_search", "app_publisher_search");
         // System.out.println("---------------------> 共导出数据[" + total + "]条 <------------------------");
 
-        long _total = new ExportAndImportData()//
-        .importData("/data/es/appgo.json", "appgo", "app_publisher_search_test_1", 1000);
-        System.out.println("---------------------> 共导入数据[" + _total + "]条 <------------------------");
+        // long _total = new ExportAndImportData()//
+        // .importData("/data/es/appgo.json2", "easy_search", "app_publisher_search_test_1", 500000);
+        // System.out.println("---------------------> 共导入数据[" + _total + "]条 <------------------------");
     }
 
+    /**
+     * 导出索引文件
+     * 
+     * @param filePath
+     * @param index
+     * @param indexType
+     * @return
+     */
     public long exportData(String filePath, String index, String indexType) {
         long total = 0;
         int size = 10000;
@@ -97,6 +101,15 @@ public class ExportAndImportData {
         return total;
     }
 
+    /**
+     * 批量导入索引文件
+     * 
+     * @param dataFile
+     * @param index
+     * @param indexType
+     * @param batchSize
+     * @return
+     */
     public long importData(String dataFile, String index, String indexType, int batchSize) {
         long count = 0;
         try {
