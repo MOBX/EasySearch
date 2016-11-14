@@ -1,17 +1,25 @@
 #通用搜索服务
 
 
-##索引建立
+##约定说明
 * indexName 	索引名称命名空间
 * indexType 	文档名称
 * schema 		索引键值对
 * data   		索引内容
 * version 		索引版本
+* fields 		输出键值对
+* keywords  	全文检索关键词
+* filter 		过滤规则
+* sort   		排序规则,默认文本相似度排序
+* distinct      聚合字段
+* field         完全匹配字段
 
 
 ###接口设计
 
-####1. schema定义 文档属性键值对
+###索引定义
+
+####1. schema定义创建
 
 ```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d ' 
@@ -72,17 +80,19 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/schema' -d '
 ```
 
 
+####2. schema定义查询
 ```
-#索引库schema定义查询接口
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/schema'  
 ```
 
+#####3. 查询全部schema定义
 ```
-#索引库全部schema定义查询
 curl -XGET 'http://127.0.0.1:8080/schemas'  
 ```
 
-####2. index  文档内容
+###索引创建
+
+####1. 创建索引
 
 ```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d ' 
@@ -107,7 +117,7 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/index/{version}' -d '
 {"status":200}
 ```
 
-####3. bulk   批量索引文档
+####2. 批量提交创建索引
 
 ```
 curl -XPOST 'http://127.0.0.1:8080/bulk' --data-binary "index.json"
@@ -117,7 +127,7 @@ curl -XPOST 'http://127.0.0.1:8080/bulk' --data-binary "index.json"
 index.json是存在当前目录下的一个json文件,里面存储了一个josn数组,你可以让它存储任何结构相同的数组.
 
 
-####4. alias  索引文档别名,同义词
+####3. alias 索引文档别名,同义词
 
 ```
 curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '  
@@ -129,18 +139,9 @@ curl -XPOST 'http://127.0.0.1:8080/indexName/indexType/alias' -d '
 ```
 
 
-##搜索服务
-* indexName 	索引命名空间
-* indexType 	文档名称
-* fields 		输出键值对
-* query  		搜索内容(keywords,must,match,fuzzy)
-* filter 		过滤规则
-* sort   		排序规则,默认文本相似度排序
+###搜索服务
 
-
-###接口设计
-
-####1. search 
+####1. 关键词搜索
 ```
 #普通的全文检索,keywords为空按照得分全部查询(支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords'
@@ -175,20 +176,39 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&d
 ```
 上述几种基础查询,可以任意组合来实现多种业务查询场景.
 ```
-##分词服务
+
+###分词服务
 * text 	   文本内容
 * analyzer   分词规则
 
-
-###接口设计
-
-####1. analyzer 
+####1. 文本分词
 ```
 #对text文本进行分词,使用默认分词器;如需其他分词器,可带上&analyzer=jcseg等
 curl -XGET 'http://127.0.0.1:8080/analyzer?text=text'
+
+#return
+{
+  "status": 200,
+  "data": [
+    {
+      "term": "hello",
+      "startOffset": 0,
+      "endOffset": 5,
+      "position": 1,
+      "type": "ENGLISH"
+    },
+    {
+      "term": "world",
+      "startOffset": 6,
+      "endOffset": 11,
+      "position": 2,
+      "type": "ENGLISH"
+    }
+  ]
+}
 ```
 
-####2. analyzers 
+####2. 分词器查询
 ```
 #获取服务目前支持的全部分词器
 curl -XGET 'http://127.0.0.1:8080/analyzers' 
