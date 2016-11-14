@@ -74,7 +74,7 @@ public class EasySearchBoot extends SpringBootServletInitializer {
         .apiInfo(new ApiInfoBuilder()//
         .contact("zhangxiongcai337@gmail.com")//
         .title("EasySearch")//
-        .description("MOB通用搜索服务.")//
+        .description("通用搜索服务.")//
         .termsOfServiceUrl("http://mob.com")//
         .license("Apache License Version 2.0")//
         .licenseUrl("https://github.com/MOBX/EasySearch/blob/master/LICENSE")//
