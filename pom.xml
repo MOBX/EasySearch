@@ -46,6 +46,10 @@
             <id>Lawrence-zxc-maven-repo</id>
             <url>https://raw.githubusercontent.com/Lawrence-zxc/maven-repo/master/repository</url>
         </repository>
+        <repository>
+			<id>lamfire-repos</id>
+			<url>http://m2.lamfire.com:8081/nexus/content/repositories/lamfire/</url>
+		</repository>
     </repositories>
 
     <dependencies>
