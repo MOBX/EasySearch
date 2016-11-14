@@ -212,6 +212,16 @@ curl -XGET 'http://127.0.0.1:8080/analyzers'
 ```
 
 
+## 配置文件说明
+
+####application.properties
+```
+#es节点名称
+es.cluster.name=easy_search
+#es传输通信端口
+es.nodes=192.168.180.155:9300,192.168.180.156:9300
+```
+
 
 
 ## install & depoly
