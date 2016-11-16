@@ -66,6 +66,22 @@ public class SchemaController extends BaseController {
     }
 
     @ResponseBody
+    @ApiOperation(value = "DEL Schema", httpMethod = "DELETE", response = JsonResult.class, notes = "删除Schema定义")
+    @RequestMapping(value = "/{indexName}/{indexType}/schema", produces = { "application/json" }, method = RequestMethod.DELETE)
+    JSON delSchema(@ApiParam(required = true, name = "indexName", value = "索引名称命名空间") @PathVariable("indexName") String indexName,
+                   @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
+        if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
+
+        try {
+            if (es.existsIndex(indexName)) es.dropIndex(indexName);
+            return ok();
+        } catch (Exception e) {
+            _.error("create schema Exception!", e);
+        }
+        return fail("参数错误");
+    }
+
+    @ResponseBody
     @ApiOperation(value = "GET all Schema", httpMethod = "GET", response = JsonResult.class, notes = "全部Schema定义")
     @RequestMapping(value = "/schemas", produces = { "application/json" }, method = RequestMethod.GET)
     JSON allSchema() {
