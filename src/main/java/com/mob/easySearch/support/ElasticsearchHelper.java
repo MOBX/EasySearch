@@ -46,11 +46,15 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.aggregations.metrics.max.MaxBuilder;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import com.lamfire.json.JSON;
 import com.lamfire.logger.Logger;
 import com.lamfire.logger.LoggerFactory;
@@ -308,11 +312,17 @@ public class ElasticsearchHelper {
             key = StringUtils.join(aggList, "-");
             termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"-\")");
         }
+        // terms sort by max_score
+        termsBuilder.order(Terms.Order.aggregation("max_score", false));
 
         TopHitsBuilder topHitsBuilder = AggregationBuilders.topHits("top-tags-record")//
         .setFetchSource(allFields.toArray(new String[] {}), null);
         if (topOnly) topHitsBuilder.setSize(1);
-        search.addAggregation(termsBuilder.subAggregation(topHitsBuilder));
+        if (!topOnly) topHitsBuilder.setSize(320);
+        MaxBuilder maxBuilder = AggregationBuilders.max("max_score").script("_score");
+        termsBuilder.subAggregation(topHitsBuilder);
+        termsBuilder.subAggregation(maxBuilder);
+        search.addAggregation(termsBuilder);
 
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
