@@ -43,9 +43,7 @@ public class IndexConroller extends BaseController {
         for (Object source : data) {
             final Map<String, Object> _source = JSON.fromJavaObject(source);
             String id = UUIDGen.uuid();
-            if (_source.containsKey("id")) {
-                id = _source.get("id") + "";
-            }
+            if (_source.containsKey("id")) id = _source.get("id") + "";
             final String _id = id;
             ThreadUtil.submitTask(new Runnable() {
 

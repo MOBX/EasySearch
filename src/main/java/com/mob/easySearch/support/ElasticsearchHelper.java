@@ -109,9 +109,7 @@ public class ElasticsearchHelper {
     @SuppressWarnings("resource")
     protected static Client makeClient(String clusterName, String host, int port) {
         Builder builder = ImmutableSettings.settingsBuilder();
-        if (StringUtils.isNotBlank(clusterName)) {
-            builder.put("cluster.name", clusterName);
-        }
+        if (StringUtils.isNotBlank(clusterName)) builder.put("cluster.name", clusterName);
         Settings settings = builder.build();
         return new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(host, port));
     }
@@ -124,9 +122,7 @@ public class ElasticsearchHelper {
      */
     protected static Client makeClient(String clusterName, List<Map<String, Object>> nodes) {
         Builder builder = ImmutableSettings.settingsBuilder();
-        if (StringUtils.isNotBlank(clusterName)) {
-            builder.put("cluster.name", clusterName);
-        }
+        if (StringUtils.isNotBlank(clusterName)) builder.put("cluster.name", clusterName);
         Settings settings = builder.build();
         TransportClient client = new TransportClient(settings);
         for (Map<String, Object> addr : nodes) {
@@ -483,8 +479,7 @@ public class ElasticsearchHelper {
      */
     public GetResponse get(String indexName, String indexType, String id) {
         GetRequest request = new GetRequest(indexName, indexType, id);
-        GetResponse response = getClient().get(request).actionGet();
-        return response;
+        return getClient().get(request).actionGet();
     }
 
     /**
