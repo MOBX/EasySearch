@@ -37,7 +37,7 @@ public class IndexConroller extends BaseController {
     @PathVariable("indexType")
     final String indexType, @RequestBody Object... data) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
-        if (data == null || data.length == 0) return fail("文档文库");
+        if (data == null || data.length == 0) return fail("文档为空");
         if (!es.existsIndex(indexName)) return fail("索引未定义");
 
         for (Object source : data) {
