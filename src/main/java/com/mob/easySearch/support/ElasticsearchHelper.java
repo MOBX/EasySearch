@@ -56,18 +56,15 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import com.lamfire.json.JSON;
-import com.lamfire.logger.Logger;
-import com.lamfire.logger.LoggerFactory;
+import com.mob.easySearch.cons.Definition;
 
 /**
  * @author zxc Jun 13, 2016 4:20:25 PM
  */
-public class ElasticsearchHelper {
+public class ElasticsearchHelper implements Definition {
 
-    private static final Logger _ = LoggerFactory.getLogger(ElasticsearchHelper.class);
-
-    private Client              client;
-    private String              clusterName;
+    private Client client;
+    private String clusterName;
 
     public ElasticsearchHelper(String clusterName, String host, int port) {
         this.client = makeClient(clusterName, host, port);
@@ -305,7 +302,7 @@ public class ElasticsearchHelper {
             for (String aggStr : aggList) {
                 _aggList.add("doc." + aggStr + ".value");
             }
-            key = StringUtils.join(aggList, "-");
+            key = StringUtils.join(aggList, AGGR_SPLIT);
             termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"-\")");
         }
         // terms sort by max_score
@@ -356,6 +353,120 @@ public class ElasticsearchHelper {
         result.put("total", (sets != null && sets.size() > 0) ? sets.size() : 0);
         result.put("list", (sets != null && sets.size() > 0) ? sets : Sets.newHashSet());
         return result;
+    }
+
+    /**
+     * term聚合查询,不返回明细
+     * 
+     * <pre>
+     * 多字段聚合
+     * 通常情况，terms聚合都是仅针对于一个字段的聚合。因为该聚合是需要把词条放入一个哈希表中，如果多个字段就会造成n^2的内存消耗。
+     * 不过，对于多字段，ES也提供了下面两种方式：
+     * 1 使用脚本合并字段
+     * 2 使用copy_to方法，合并两个字段，创建出一个新的字段，对新字段执行单个字段的聚合
+     * </pre>
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param q
+     * @param filters
+     * @param matchField
+     * @param aggregation
+     * @return
+     */
+    @SuppressWarnings({ "unchecked" })
+    public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
+                                 Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
+        _.info("search thin_aggregation start");
+        if (StringUtils.isEmpty(q)) q = "*";
+        Set<String> fields = matchField;
+        Set<String> allFields = Sets.newHashSet();
+        GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
+        try {
+            Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
+            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
+            allFields.addAll(_sourceMap.keySet());
+        } catch (Exception e) {
+            _.error("queryString error!", e);
+        }
+
+        // 分词查询
+        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
+        queryStringBuilder.useDisMax(true);
+        for (String field : fields)
+            queryStringBuilder.field(field);
+        // 过滤条件
+        BoolFilterBuilder boolFilter = null;
+        if (filters != null && filters.size() != 0) {
+            boolFilter = FilterBuilders.boolFilter();
+            for (Entry<String, Object[]> entry : filters.entrySet()) {
+                if (allFields.contains(entry.getKey())) {
+                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
+                }
+            }
+        }
+        // 区间查询
+        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
+        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
+            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
+            for (Entry<String, Object> row : range.getValue().entrySet()) {
+                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
+            }
+            rangeList.add(rangeFilter);
+        }
+        if (rangeList.size() > 0) {
+            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
+            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
+        }
+        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+
+        SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
+        .setSize(0)// size为0,结果返回全部聚合查询数据,也就是Global
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        // 聚合的key
+        String key = "";
+        // 按字段去重
+        List<String> aggList = Lists.newArrayList();
+        for (String agg : aggregation) {
+            if (allFields.contains(agg)) aggList.add(agg);
+        }
+        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(0);
+        // 使用term field聚合
+        if (aggList.size() == 1) {
+            key = aggList.get(0);
+            termsBuilder.field(key);
+        }
+        // 使用term script聚合
+        if (aggList.size() > 1) {
+            List<String> _aggList = Lists.newArrayList();
+            for (String aggStr : aggList) {
+                _aggList.add("doc." + aggStr + ".value");
+            }
+            key = StringUtils.join(aggList, AGGR_SPLIT);
+            termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"" + AGGR_SPLIT + "\")");
+        }
+        search.addAggregation(termsBuilder);
+
+        SearchResponse response = search.execute().actionGet();
+        long total = 0l;
+
+        Aggregations agg = response.getAggregations();
+        Terms types = agg.get("top-tags");
+        Collection<Terms.Bucket> collection = types.getBuckets();
+        total += collection.size();
+        _.debug("thin_aggregation total=" + total);
+
+        List<String> list = Lists.newLinkedList();
+        for (Terms.Bucket bucket : collection) {
+            list.add(bucket.getKey());
+        }
+        return (list == null || list.size() == 0) ? new LinkedList<String>() : list;
     }
 
     /**

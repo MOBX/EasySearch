@@ -11,19 +11,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.lamfire.json.JSON;
-import com.lamfire.logger.Logger;
-import com.lamfire.logger.LoggerFactory;
 import com.lamfire.utils.StringUtils;
+import com.mob.easySearch.cons.Definition;
 import com.mob.easySearch.support.ElasticsearchHelper;
 
 /**
  * @author zxc Jun 14, 2016 3:43:28 PM
  */
 @Component
-public class BaseController {
-
-    protected static final Logger        _      = LoggerFactory.getLogger(BaseController.class);
-    protected static final Logger        access = LoggerFactory.getLogger("ACCESS");
+public class BaseController implements Definition {
 
     @Autowired
     protected HttpServletRequest         request;

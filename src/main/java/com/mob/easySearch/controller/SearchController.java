@@ -8,14 +8,19 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.elasticsearch.common.collect.Maps;
 import org.springframework.web.bind.annotation.*;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import com.lamfire.json.JSON;
+import com.lamfire.utils.Lists;
 import com.lamfire.utils.StringUtils;
 import com.mob.easySearch.support.IteratorWrapper;
 import com.mob.easySearch.support.IteratorWrapper.IteratorHandler;
@@ -24,12 +29,12 @@ import com.mob.easySearch.support.JsonResult;
 /**
  * @author zxc Jun 8, 2016 5:52:05 PM
  */
+@SuppressWarnings("unchecked")
 @RestController
 @RequestMapping("/v1/api")
 @Api(value = "search", description = "搜索服务")
 public class SearchController extends BaseController {
 
-    @SuppressWarnings("unchecked")
     @ResponseBody
     @ApiOperation(value = "do search", httpMethod = "GET", response = JsonResult.class, notes = "搜索接口")
     @RequestMapping(value = "/{indexName}/{indexType}/search", produces = { "application/json" }, method = RequestMethod.GET)
@@ -80,35 +85,121 @@ public class SearchController extends BaseController {
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
-                Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
-                                                      field, aggregation, ranges, topOnly);
-                result.put("total", _result.get("total"));
-                result.put("pageno", pageno);
-                result.put("pagesize", pagesize);
-                Set<Map<String, Object>> _list = (Set<Map<String, Object>>) _result.get("list");
-                if (_list != null && _list.size() > 0) {
-                    IteratorWrapper.pagination(_list, pagesize)//
-                    .iterator(new IteratorHandler<Map<String, Object>>() {
-
-                        @Override
-                        public boolean handle(int pageNum, List<Map<String, Object>> subData, Object... params) {
-                            int pageno = ((Integer) params[0]).intValue();
-                            Map<String, Object> result = (Map<String, Object>) params[1];
-                            if (pageNum + 1 == pageno) {
-                                if (subData != null && subData.size() > 0) result.put("list", subData);
-                                return false;
-                            }
-                            return true;
-                        }
-                    }, pageno, result);
-                } else {
-                    result.put("list", Lists.newArrayList());
-                }
+                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges,
+                              topOnly);
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);
         }
         access.info("[SearchController parameterMap end]:" + JSON.toJSONString(request.getParameterMap()));
         return ok(result);
+    }
+
+    /**
+     * 分词请求,根据聚合key进行多次完全match匹配查询
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param keywords
+     * @param field
+     * @param aggregation
+     * @param filter
+     * @param ranges
+     * @param topOnly
+     * @return
+     */
+    protected Map<String, Object> aggr(final String indexName, final String indexType, final Integer pageno,
+                                       final Integer pagesize, final String keywords, final Set<String> field,
+                                       final Set<String> aggregation, final Map<String, Object[]> filter,
+                                       final Table<String, String, Object> ranges, final boolean topOnly) {
+        Map<String, Object> result = Maps.newHashMap();
+        List<String> _result = es.thinAggr(indexName, indexType, keywords, filter, field, aggregation, ranges);
+        result.put("total", _result.size());
+        result.put("pageno", pageno);
+        result.put("pagesize", pagesize);
+        if (_result != null && _result.size() > 0) {
+            IteratorWrapper.pagination(_result, pagesize)//
+            .iterator(new IteratorHandler<String>() {
+
+                @Override
+                public boolean handle(int pageNum, List<String> subData, Object... params) {
+                    int pageno = ((Integer) params[0]).intValue();
+                    Map<String, Object> result = (Map<String, Object>) params[1];
+                    if (pageNum + 1 != pageno) return true;
+                    if (subData == null || subData.size() == 0) return false;
+
+                    List<Map<String, Object>> resData = Lists.newLinkedList();
+                    for (String key : subData) {
+                        Map<String, Object> map = Maps.newHashMap();
+                        String[] keys = StringUtils.split(key, AGGR_SPLIT);
+                        int i = 0;
+                        for (String aggr : aggregation) {
+                            filter.put(aggr, new Object[] { keys[i] });
+                            i++;
+                        }
+                        map.put(StringUtils.join(aggregation.toArray(new String[] {}), AGGR_SPLIT), key);
+                        Map<String, Object> res = es.query(indexName, indexType, 1,//
+                                                           topOnly ? 1 : 10000, keywords, filter, field, ranges);
+                        map.put("hits", res.get("list"));
+                        resData.add(map);
+                    }
+                    result.put("list", resData);
+                    return false;
+                }
+            }, pageno, result);
+        } else {
+            result.put("list", Lists.newArrayList());
+        }
+        return result;
+    }
+
+    /**
+     * 内存一次返回聚合明细
+     * 
+     * @param indexName
+     * @param indexType
+     * @param pageno
+     * @param pagesize
+     * @param keywords
+     * @param field
+     * @param aggregation
+     * @param filter
+     * @param ranges
+     * @param topOnly
+     * @return
+     */
+    protected Map<String, Object> _aggr(final String indexName, final String indexType, final Integer pageno,
+                                        final Integer pagesize, final String keywords, final Set<String> field,
+                                        final Set<String> aggregation, final Map<String, Object[]> filter,
+                                        final Table<String, String, Object> ranges, final boolean topOnly) {
+        Map<String, Object> result = Maps.newHashMap();
+
+        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
+                                              field, aggregation, ranges, topOnly);
+        result.put("total", _result.get("total"));
+        result.put("pageno", pageno);
+        result.put("pagesize", pagesize);
+        Set<Map<String, Object>> _list = (Set<Map<String, Object>>) _result.get("list");
+        if (_list != null && _list.size() > 0) {
+            IteratorWrapper.pagination(_list, pagesize)//
+            .iterator(new IteratorHandler<Map<String, Object>>() {
+
+                @Override
+                public boolean handle(int pageNum, List<Map<String, Object>> subData, Object... params) {
+                    int pageno = ((Integer) params[0]).intValue();
+                    Map<String, Object> result = (Map<String, Object>) params[1];
+                    if (pageNum + 1 == pageno) {
+                        if (subData != null && subData.size() > 0) result.put("list", subData);
+                        return false;
+                    }
+                    return true;
+                }
+            }, pageno, result);
+        } else {
+            result.put("list", Lists.newArrayList());
+        }
+        return result;
     }
 }
