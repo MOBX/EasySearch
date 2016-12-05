@@ -356,7 +356,7 @@ public class ElasticsearchHelper implements Definition {
     }
 
     /**
-     * term聚合查询,不返回明细
+     * term聚合查询,不返回明细;解决aggr jvm oom问题
      * 
      * <pre>
      * 多字段聚合
