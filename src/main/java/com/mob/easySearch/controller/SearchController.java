@@ -96,7 +96,7 @@ public class SearchController extends BaseController {
     }
 
     /**
-     * 分词请求,根据聚合key进行多次完全match匹配查询
+     * 分次请求,根据聚合key进行多次完全match匹配查询
      * 
      * @param indexName
      * @param indexType
@@ -175,7 +175,6 @@ public class SearchController extends BaseController {
                                         final Set<String> aggregation, final Map<String, Object[]> filter,
                                         final Table<String, String, Object> ranges, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
-
         Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
                                               field, aggregation, ranges, topOnly);
         result.put("total", _result.get("total"));
