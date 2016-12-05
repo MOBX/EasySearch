@@ -145,7 +145,7 @@ public class ElasticsearchHelper implements Definition {
     public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q,
                                      Map<String, Object[]> filters, Set<String> matchField,
                                      Table<String, String, Object> ranges) {
-        _.info("search query start");
+        access.info("[ElasticsearchHelper query start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -204,6 +204,7 @@ public class ElasticsearchHelper implements Definition {
         result.put("pageno", pageno);
         result.put("pagesize", pagesize);
         result.put("total", total);
+        access.info("[ElasticsearchHelper query end]:" + q);
         return result;
     }
 
@@ -233,7 +234,7 @@ public class ElasticsearchHelper implements Definition {
     public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
                                     Set<String> matchField, Set<String> aggregation,
                                     Table<String, String, Object> ranges, boolean topOnly) {
-        _.info("search aggregation start");
+        access.info("[ElasticsearchHelper aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -352,6 +353,7 @@ public class ElasticsearchHelper implements Definition {
         Map<String, Object> result = Maps.newHashMap();
         result.put("total", (sets != null && sets.size() > 0) ? sets.size() : 0);
         result.put("list", (sets != null && sets.size() > 0) ? sets : Sets.newHashSet());
+        access.info("[ElasticsearchHelper aggregation end]:" + q);
         return result;
     }
 
@@ -379,7 +381,7 @@ public class ElasticsearchHelper implements Definition {
     @SuppressWarnings({ "unchecked" })
     public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
                                  Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
-        _.info("search thin_aggregation start");
+        access.info("[ElasticsearchHelper thin_aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = Sets.newHashSet();
@@ -466,6 +468,7 @@ public class ElasticsearchHelper implements Definition {
         for (Terms.Bucket bucket : collection) {
             list.add(bucket.getKey());
         }
+        access.info("[ElasticsearchHelper thin_aggregation end]:" + q);
         return (list == null || list.size() == 0) ? new LinkedList<String>() : list;
     }
 
