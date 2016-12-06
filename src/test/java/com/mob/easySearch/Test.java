@@ -3,6 +3,9 @@
  */
 package com.mob.easySearch;
 
+import java.util.List;
+
+import com.lamfire.utils.Lists;
 import com.lamfire.utils.StringUtils;
 import com.mob.easySearch.cons.Definition;
 
@@ -17,21 +20,29 @@ public class Test implements Definition {
         // System.out.println(ElasticsearchHelper.customMatches("(.*)_(lt|gt|lte|gte)$", "app_category_id_gte"));
         // System.out.println(StringUtils.substringBeforeLast("app_category_id_gte", "_"));
         // System.out.println(StringUtils.substringAfterLast("app_category_id_gte", "_"));
-        // String[] keys = org.apache.commons.lang3.StringUtils.split(word, AGGR_SPLIT);
+        // String[] keys = org.apache.commons.lang3.StringUtils.split(word, "$_$");
+        // f40da3306847508cfa72551b5068a858f6e40346ef2657636ac0dd3050980a9e^_^1
+        String word = "ali.alhadidi.gif!@~^%&(*$()$#)_&_facebook^_^-1---^_^asdas^_^(asdas)^_^asdas";
 
-        String word = "ali.alhadidi.gif!@~^%&(*$()$#)_&_facebook^_^-1---^_^_---2";
-        System.out.println(split(word));
+        List<String> list = Lists.newLinkedList();
+        split(word, list);
+        System.out.println(list);
     }
 
-    private static String[] split(String word) {
-        if (StringUtils.isEmpty(word)) return new String[] {};
+    private static void split(String word, List<String> list) {
+        if (StringUtils.isEmpty(word)) return;
         int index = org.apache.commons.lang3.StringUtils.indexOf(word, AGGR_SPLIT);
-        String word1 = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
-        String _word = org.apache.commons.lang3.StringUtils.substring(word, index + 3, word.length());
+        String split_word = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
+        list.add(split_word);
 
+        String _word = org.apache.commons.lang3.StringUtils.substring(word, index + 3, word.length());
         int _index = org.apache.commons.lang3.StringUtils.indexOf(_word, AGGR_SPLIT);
-        String word2 = org.apache.commons.lang3.StringUtils.substring(_word, 0, _index);
-        String word3 = org.apache.commons.lang3.StringUtils.substring(_word, _index + 3, _word.length());
-        return new String[] { word1, word2, word3 };
+        if (_index > 0) {
+            split(_word, list);
+            return;
+        } else {
+            list.add(_word);
+        }
+        return;
     }
 }

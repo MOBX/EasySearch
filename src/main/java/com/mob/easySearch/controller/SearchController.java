@@ -133,10 +133,11 @@ public class SearchController extends BaseController {
                     List<Map<String, Object>> resData = Lists.newLinkedList();
                     for (String key : subData) {
                         Map<String, Object> map = Maps.newHashMap();
-                        String[] keys = split(key);
+                        List<String> keys = Lists.newLinkedList();
+                        split(key, keys);
                         int i = 0;
                         for (String aggr : aggregation) {
-                            filter.put(aggr, new Object[] { keys[i] });
+                            filter.put(aggr, new Object[] { keys.get(i) });
                             i++;
                         }
                         map.put(StringUtils.join(aggregation.toArray(new String[] {}), AGGR_SPLIT), key);

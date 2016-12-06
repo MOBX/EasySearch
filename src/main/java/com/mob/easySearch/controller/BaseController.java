@@ -3,6 +3,8 @@
  */
 package com.mob.easySearch.controller;
 
+import java.util.List;
+
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
@@ -37,16 +39,20 @@ public class BaseController implements Definition {
         es = new ElasticsearchHelper(clusterName, nodeArray);
     }
 
-    public static String[] split(String word) {
-        if (StringUtils.isEmpty(word)) return new String[] {};
+    public static void split(String word, List<String> list) {
+        if (StringUtils.isEmpty(word)) return;
         int index = org.apache.commons.lang3.StringUtils.indexOf(word, AGGR_SPLIT);
-        String word1 = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
-        String _word = org.apache.commons.lang3.StringUtils.substring(word, index + 3, word.length());
+        String split_word = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
+        list.add(split_word);
 
+        String _word = org.apache.commons.lang3.StringUtils.substring(word, index + 3, word.length());
         int _index = org.apache.commons.lang3.StringUtils.indexOf(_word, AGGR_SPLIT);
-        String word2 = org.apache.commons.lang3.StringUtils.substring(_word, 0, _index);
-        String word3 = org.apache.commons.lang3.StringUtils.substring(_word, _index + 3, _word.length());
-        return new String[] { word1, word2, word3 };
+        if (_index > 0) {
+            split(_word, list);
+        } else {
+            list.add(_word);
+        }
+        return;
     }
 
     public static JSON fail(String msg) {
