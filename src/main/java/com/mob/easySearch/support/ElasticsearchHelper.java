@@ -453,6 +453,11 @@ public class ElasticsearchHelper implements Definition {
             key = StringUtils.join(aggList, AGGR_SPLIT);
             termsBuilder.script("[" + StringUtils.join(_aggList, ",") + "].join(\"" + AGGR_SPLIT + "\")");
         }
+        // terms sort by max_score
+        termsBuilder.order(Terms.Order.aggregation("max_score", false));
+
+        MaxBuilder maxBuilder = AggregationBuilders.max("max_score").script("_score");
+        termsBuilder.subAggregation(maxBuilder);
         search.addAggregation(termsBuilder);
 
         SearchResponse response = search.execute().actionGet();
