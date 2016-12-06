@@ -196,6 +196,8 @@ public class ElasticsearchHelper implements Definition {
         .setSize(pagesize)//
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
+        _.info(search.toString());
+
         SearchResponse response = search.execute().actionGet();
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);

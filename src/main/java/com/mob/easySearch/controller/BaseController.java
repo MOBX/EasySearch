@@ -37,6 +37,18 @@ public class BaseController implements Definition {
         es = new ElasticsearchHelper(clusterName, nodeArray);
     }
 
+    public static String[] split(String word) {
+        if (StringUtils.isEmpty(word)) return new String[] {};
+        int index = org.apache.commons.lang3.StringUtils.indexOf(word, AGGR_SPLIT);
+        String word1 = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
+        String _word = org.apache.commons.lang3.StringUtils.substring(word, index + 3, word.length());
+
+        int _index = org.apache.commons.lang3.StringUtils.indexOf(_word, AGGR_SPLIT);
+        String word2 = org.apache.commons.lang3.StringUtils.substring(_word, 0, _index);
+        String word3 = org.apache.commons.lang3.StringUtils.substring(_word, _index + 3, _word.length());
+        return new String[] { word1, word2, word3 };
+    }
+
     public static JSON fail(String msg) {
         return result(900, null, msg);
     }
