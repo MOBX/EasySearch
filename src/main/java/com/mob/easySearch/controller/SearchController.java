@@ -132,7 +132,6 @@ public class SearchController extends BaseController {
 
                     List<Map<String, Object>> resData = Lists.newLinkedList();
                     for (String key : subData) {
-                        Map<String, Object> map = Maps.newHashMap();
                         List<String> keys = Lists.newLinkedList();
                         split(key, keys);
                         int i = 0;
@@ -140,15 +139,20 @@ public class SearchController extends BaseController {
                             filter.put(aggr, new Object[] { keys.get(i) });
                             i++;
                         }
-                        map.put(StringUtils.join(aggregation.toArray(new String[] {}), AGGR_SPLIT), key);
                         try {
+                            Map<String, Object> map = Maps.newHashMap();
                             Map<String, Object> res = es.query(indexName, indexType, 1,//
                                                                topOnly ? 1 : 10000, keywords, filter, field, ranges);
-                            map.put("hits", res.get("list"));
+                            if (topOnly) {
+                                resData.addAll((List<Map<String, Object>>) res.get("list"));
+                            } else {
+                                map.put(StringUtils.join(aggregation.toArray(new String[] {}), AGGR_SPLIT), key);
+                                map.put("hits", res.get("list"));
+                                resData.add(map);
+                            }
                         } catch (Exception e) {
                             _.error("es.query error!filter=" + filter, e);
                         }
-                        resData.add(map);
                     }
                     result.put("list", resData);
                     return false;

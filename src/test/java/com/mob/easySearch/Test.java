@@ -39,7 +39,6 @@ public class Test implements Definition {
         int _index = org.apache.commons.lang3.StringUtils.indexOf(_word, AGGR_SPLIT);
         if (_index > 0) {
             split(_word, list);
-            return;
         } else {
             list.add(_word);
         }
