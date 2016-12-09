@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 uuzu.com All right reserved.
+ * Copyright 2015-2020 msun.com All right reserved.
  */
 package com.mob.easySearch.cons;
 
@@ -11,8 +11,8 @@ import com.lamfire.logger.LoggerFactory;
  */
 public interface Definition {
 
-    public static final Logger _      = LoggerFactory.getLogger(Definition.class);
-    public static final Logger access = LoggerFactory.getLogger("ACCESS");
+    public static final Logger _          = LoggerFactory.getLogger(Definition.class);
+    public static final Logger access     = LoggerFactory.getLogger("ACCESS");
 
-    public static final String AGGR_SPLIT  = "^_^";
+    public static final String AGGR_SPLIT = "^_^";
 }
