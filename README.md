@@ -2,6 +2,13 @@
 
 ![image](https://github.com/MOBX/EasySearch/blob/master/src/main/resources/static/images/demo.png)
 
+##Next
+* suggest支持
+* solr支持
+* 纯 lucene的索引库支持
+* 自定义分词器支持
+* 更多分析接口
+
 ##约定说明
 * indexName 	索引名称命名空间
 * indexType 	文档名称
