@@ -37,6 +37,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
@@ -192,11 +193,12 @@ public class ElasticsearchHelper implements Definition {
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
+        .setTimeout(TimeValue.timeValueSeconds(60))//
         .setFrom((pageno - 1) * pagesize)//
         .setSize(pagesize)//
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
-        // _.info(search.toString());
+        _.debug(search.toString());
         SearchResponse response = search.execute().actionGet();
         long total = response.getHits().getTotalHits();
         List<Map<String, Object>> list = result(response);
@@ -282,6 +284,7 @@ public class ElasticsearchHelper implements Definition {
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
+        .setTimeout(TimeValue.timeValueSeconds(60))//
         .setSize(0)// size为0,结果返回全部聚合查询数据,也就是Global
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
@@ -319,6 +322,7 @@ public class ElasticsearchHelper implements Definition {
         termsBuilder.subAggregation(maxBuilder);
         search.addAggregation(termsBuilder);
 
+        _.debug(search.toString());
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
 
@@ -429,6 +433,7 @@ public class ElasticsearchHelper implements Definition {
         FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
+        .setTimeout(TimeValue.timeValueSeconds(60))//
         .setSize(0)// size为0,结果返回全部聚合查询数据,也就是Global
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
@@ -439,7 +444,7 @@ public class ElasticsearchHelper implements Definition {
         for (String agg : aggregation) {
             if (allFields.contains(agg)) aggList.add(agg);
         }
-        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(0);
+        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(1000);// 聚合最多返回1000组明细集合
         // 使用term field聚合
         if (aggList.size() == 1) {
             key = aggList.get(0);
@@ -461,6 +466,7 @@ public class ElasticsearchHelper implements Definition {
         termsBuilder.subAggregation(maxBuilder);
         search.addAggregation(termsBuilder);
 
+        _.debug(search.toString());
         SearchResponse response = search.execute().actionGet();
         long total = 0l;
 
@@ -498,6 +504,7 @@ public class ElasticsearchHelper implements Definition {
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType);
         SearchResponse response = search.setQuery(query)//
+        .setTimeout(TimeValue.timeValueSeconds(60))//
         .setFrom((pageno - 1) * pagesize)//
         .setSize(pagesize)//
         .addSort("createat", SortOrder.DESC)//

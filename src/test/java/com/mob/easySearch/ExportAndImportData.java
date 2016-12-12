@@ -49,11 +49,11 @@ public class ExportAndImportData {
 
     public static void main(String[] args) throws Exception {
         // long total = new ExportAndImportData()//
-        // .exportData("/data/es/appgo.json", "appgo", "app_publisher_search");
+        // .exportData("/data/es/appgo.json", "appgo", "app_publisher_search_test_1");
         // System.out.println("---------------------> 共导出数据[" + total + "]条 <------------------------");
 
         long _total = new ExportAndImportData()//
-        .importData("/data/appgo.json2", "appgo", "app_publisher_search", 500000);
+        .importData("/data/es/appgo.json", "easy_search", "app_publisher_search_test_1", 500000);
         System.out.println("---------------------> 共导入数据[" + _total + "]条 <------------------------");
     }
 
