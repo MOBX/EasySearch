@@ -45,6 +45,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.Aggregator.SubAggCollectionMode;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.aggregations.metrics.max.MaxBuilder;
@@ -444,7 +445,7 @@ public class ElasticsearchHelper implements Definition {
         for (String agg : aggregation) {
             if (allFields.contains(agg)) aggList.add(agg);
         }
-        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(1000);// 聚合最多返回1000组明细集合
+        TermsBuilder termsBuilder = AggregationBuilders.terms("top-tags").size(5000);// 聚合最多返回5000组明细集合
         // 使用term field聚合
         if (aggList.size() == 1) {
             key = aggList.get(0);
@@ -461,6 +462,7 @@ public class ElasticsearchHelper implements Definition {
         }
         // terms sort by max_score
         termsBuilder.order(Terms.Order.aggregation("max_score", false));
+        termsBuilder.collectMode(SubAggCollectionMode.DEPTH_FIRST);// 使用深度优先遍历
 
         MaxBuilder maxBuilder = AggregationBuilders.max("max_score").script("_score");
         termsBuilder.subAggregation(maxBuilder);
