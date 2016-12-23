@@ -85,8 +85,7 @@ public class SearchController extends BaseController {
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
-                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges,
-                              topOnly);
+                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges,topOnly);
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);
@@ -141,8 +140,7 @@ public class SearchController extends BaseController {
                         }
                         try {
                             Map<String, Object> map = Maps.newHashMap();
-                            Map<String, Object> res = es.query(indexName, indexType, 1,//
-                                                               topOnly ? 1 : 10000, keywords, filter, field, ranges);
+                            Map<String, Object> res = es.query(indexName, indexType, 1,topOnly ? 1 : 10000, keywords, filter, field, ranges);
                             if (topOnly) {
                                 resData.addAll((List<Map<String, Object>>) res.get("list"));
                             } else {
@@ -184,8 +182,7 @@ public class SearchController extends BaseController {
                                         final Set<String> aggregation, final Map<String, Object[]> filter,
                                         final Table<String, String, Object> ranges, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
-        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, //
-                                              field, aggregation, ranges, topOnly);
+        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter,field, aggregation, ranges, topOnly);
         result.put("total", _result.get("total"));
         result.put("pageno", pageno);
         result.put("pagesize", pagesize);
