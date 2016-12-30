@@ -42,6 +42,10 @@ public class BaseController implements Definition {
     public static void split(String word, List<String> list) {
         if (StringUtils.isEmpty(word)) return;
         int index = org.apache.commons.lang3.StringUtils.indexOf(word, AGGR_SPLIT);
+        if (index < 0) {
+            list.add(word);
+            return;
+        }
         String split_word = org.apache.commons.lang3.StringUtils.substring(word, 0, index);
         list.add(split_word);
 
