@@ -157,7 +157,7 @@ public class ElasticsearchHelper implements Definition {
             Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
             allFields.addAll(_sourceMap.keySet());
         } catch (Exception e) {
-            _.error("queryString error!", e);
+            _.error("getMapping error!", e);
         }
 
         // 分词查询
@@ -248,7 +248,7 @@ public class ElasticsearchHelper implements Definition {
             Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
             allFields.addAll(_sourceMap.keySet());
         } catch (Exception e) {
-            _.error("queryString error!", e);
+            _.error("getMapping error!", e);
         }
 
         // 分词查询
@@ -397,7 +397,7 @@ public class ElasticsearchHelper implements Definition {
             Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
             allFields.addAll(_sourceMap.keySet());
         } catch (Exception e) {
-            _.error("queryString error!", e);
+            _.error("getMapping error!", e);
         }
 
         // 分词查询
