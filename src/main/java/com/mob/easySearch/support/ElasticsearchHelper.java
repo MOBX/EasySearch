@@ -125,8 +125,7 @@ public class ElasticsearchHelper implements Definition {
         Settings settings = builder.build();
         TransportClient client = new TransportClient(settings);
         for (Map<String, Object> addr : nodes) {
-            client.addTransportAddress(new InetSocketTransportAddress((String) addr.get("host"),
-                                                                      Integer.parseInt((String) addr.get("port"))));
+            client.addTransportAddress(new InetSocketTransportAddress((String) addr.get("host"), Integer.parseInt((String) addr.get("port"))));
         }
         return client;
     }
@@ -144,9 +143,7 @@ public class ElasticsearchHelper implements Definition {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q,
-                                     Map<String, Object[]> filters, Set<String> matchField,
-                                     Table<String, String, Object> ranges) {
+    public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q, Map<String, Object[]> filters, Set<String> matchField, Table<String, String, Object> ranges) {
         access.info("[ElasticsearchHelper query start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
@@ -235,9 +232,7 @@ public class ElasticsearchHelper implements Definition {
      * @return
      */
     @SuppressWarnings({ "unchecked" })
-    public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
-                                    Set<String> matchField, Set<String> aggregation,
-                                    Table<String, String, Object> ranges, boolean topOnly) {
+    public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges, boolean topOnly) {
         access.info("[ElasticsearchHelper aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
@@ -385,8 +380,7 @@ public class ElasticsearchHelper implements Definition {
      * @return
      */
     @SuppressWarnings({ "unchecked" })
-    public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters,
-                                 Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
+    public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
         access.info("[ElasticsearchHelper thin_aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
@@ -496,8 +490,7 @@ public class ElasticsearchHelper implements Definition {
      * @param params
      * @return
      */
-    public Map<String, Object> match(String indexName, String indexType, int pageno, int pagesize,
-                                     Map<String, Object> params) {
+    public Map<String, Object> match(String indexName, String indexType, int pageno, int pagesize, Map<String, Object> params) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             if (entry.getValue() == null || StringUtils.isEmpty(entry.getKey())) continue;
@@ -710,8 +703,7 @@ public class ElasticsearchHelper implements Definition {
 
     // *********************************************** private method *******************************************//
 
-    private synchronized XContentBuilder getMapping(String indexName, String indexType,
-                                                    Map<String, Map<String, Object>> fields) {
+    private synchronized XContentBuilder getMapping(String indexName, String indexType, Map<String, Map<String, Object>> fields) {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder();
             mapping.startObject().startObject(indexType).startObject("properties");
@@ -766,8 +758,7 @@ public class ElasticsearchHelper implements Definition {
         return result;
     }
 
-    private IndexRequestBuilder getIndexRequestBuilder(String indexName, String indexType, Object id,
-                                                       Map<String, Object> source) {
+    private IndexRequestBuilder getIndexRequestBuilder(String indexName, String indexType, Object id, Map<String, Object> source) {
         if (id == null || StringUtils.isBlank(id.toString())) return null;
         return getClient()//
         .prepareIndex(indexName, indexType, id.toString())//

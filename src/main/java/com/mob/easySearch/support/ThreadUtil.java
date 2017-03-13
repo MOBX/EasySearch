@@ -33,8 +33,7 @@ public class ThreadUtil {
      */
     public static void startThread(Runnable runnable, String threadName, int threadNum, long sleepTime) {
         for (int i = 0; i < threadNum; i++) {
-            Thread thread = new Thread(runnable, POUND + StringUtils.defaultIfEmpty(threadName, "Thread") + MINUS_SIGN
-                                                 + i);
+            Thread thread = new Thread(runnable, POUND + StringUtils.defaultIfEmpty(threadName, "Thread") + MINUS_SIGN + i);
             thread.start();
         }
         try {

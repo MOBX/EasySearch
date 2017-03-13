@@ -60,12 +60,8 @@ public class SearchController extends BaseController {
             }
             for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
                 if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
-                if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "field")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")
+                if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno") && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize") && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
+                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct") && !StringUtils.equalsIgnoreCase(entry.getKey(), "field") && !StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")
                     && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
                     filter.put(entry.getKey(), entry.getValue());
                 }
@@ -85,7 +81,7 @@ public class SearchController extends BaseController {
             if (aggregation.size() == 0) {
                 result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
             } else {
-                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges,topOnly);
+                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges, topOnly);
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);
@@ -109,10 +105,8 @@ public class SearchController extends BaseController {
      * @param topOnly
      * @return
      */
-    protected Map<String, Object> aggr(final String indexName, final String indexType, final Integer pageno,
-                                       final Integer pagesize, final String keywords, final Set<String> field,
-                                       final Set<String> aggregation, final Map<String, Object[]> filter,
-                                       final Table<String, String, Object> ranges, final boolean topOnly) {
+    protected Map<String, Object> aggr(final String indexName, final String indexType, final Integer pageno, final Integer pagesize, final String keywords, final Set<String> field, final Set<String> aggregation,
+                                       final Map<String, Object[]> filter, final Table<String, String, Object> ranges, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
         List<String> _result = es.thinAggr(indexName, indexType, keywords, filter, field, aggregation, ranges);
         result.put("total", _result.size());
@@ -140,7 +134,7 @@ public class SearchController extends BaseController {
                         }
                         try {
                             Map<String, Object> map = Maps.newHashMap();
-                            Map<String, Object> res = es.query(indexName, indexType, 1,topOnly ? 1 : 10000, keywords, filter, field, ranges);
+                            Map<String, Object> res = es.query(indexName, indexType, 1, topOnly ? 1 : 10000, keywords, filter, field, ranges);
                             if (topOnly) {
                                 resData.addAll((List<Map<String, Object>>) res.get("list"));
                             } else {
@@ -177,12 +171,10 @@ public class SearchController extends BaseController {
      * @param topOnly
      * @return
      */
-    protected Map<String, Object> _aggr(final String indexName, final String indexType, final Integer pageno,
-                                        final Integer pagesize, final String keywords, final Set<String> field,
-                                        final Set<String> aggregation, final Map<String, Object[]> filter,
-                                        final Table<String, String, Object> ranges, final boolean topOnly) {
+    protected Map<String, Object> _aggr(final String indexName, final String indexType, final Integer pageno, final Integer pagesize, final String keywords, final Set<String> field, final Set<String> aggregation,
+                                        final Map<String, Object[]> filter, final Table<String, String, Object> ranges, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
-        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter,field, aggregation, ranges, topOnly);
+        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, field, aggregation, ranges, topOnly);
         result.put("total", _result.get("total"));
         result.put("pageno", pageno);
         result.put("pagesize", pagesize);

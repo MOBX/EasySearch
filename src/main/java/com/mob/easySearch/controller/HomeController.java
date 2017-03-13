@@ -45,8 +45,7 @@ public class HomeController {
 
             private static final long serialVersionUID = -33776623249934740L;
 
-            public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-                                                                                       IOException {
+            public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
                 JSON json = new JSON();
                 json.put("status", 200);
                 json.put("time", DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss:SSS"));
@@ -57,8 +56,7 @@ public class HomeController {
                 out.close();
             }
 
-            public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-                                                                                        IOException {
+            public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
                 doGet(request, response);
             }
         }, "/health");

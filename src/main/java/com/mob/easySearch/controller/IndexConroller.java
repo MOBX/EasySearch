@@ -87,7 +87,6 @@ public class IndexConroller extends BaseController {
                @ApiParam(required = true, name = "indexType", value = "文档名称") @PathVariable("indexType") String indexType) {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
         if (!es.existsIndex(indexName)) return fail("索引未定义");
-
         return ok();
     }
 }

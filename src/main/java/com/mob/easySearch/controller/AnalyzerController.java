@@ -11,7 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.lamfire.json.JSON;
 import com.lamfire.utils.StringUtils;
@@ -42,9 +45,6 @@ public class AnalyzerController extends BaseController {
     @ApiOperation(value = "list all analyzer", httpMethod = "GET", response = JsonResult.class, notes = "支持的全部分词器")
     @RequestMapping(value = "/analyzers", produces = { "application/json" }, method = RequestMethod.GET)
     JSON analyzers() {
-        return ok(new Object[][] { {
-                "analyzer",
-                new String[] { "IKAnalyzer", "StandardAnalyzer", "SmartChineseAnalyzer", "SimpleAnalyzer",
-                        "StopAnalyzer", "WhitespaceAnalyzer" } } });
+        return ok(new Object[][] { { "analyzer", new String[] { "IKAnalyzer", "StandardAnalyzer", "SmartChineseAnalyzer", "SimpleAnalyzer", "StopAnalyzer", "WhitespaceAnalyzer" } } });
     }
 }
