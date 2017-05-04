@@ -472,7 +472,7 @@ public class ElasticsearchHelper implements Definition {
     }
 
     public boolean existsIndexByMem(String indexName) {
-        return schemeMap.get("indexName") != null;
+        return schemeMap.get(indexName) != null;
     }
 
     /**
