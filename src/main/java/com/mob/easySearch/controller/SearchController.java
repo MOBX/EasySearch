@@ -45,7 +45,7 @@ public class SearchController extends BaseController {
                 @ApiParam(required = true, name = "keywords", value = "关键词") @RequestParam("keywords") String keywords) {
         access.info("[SearchController parameterMap start]:" + JSON.toJSONString(request.getParameterMap()));
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
-        // if (!es.existsIndex(indexName)) return fail("索引未定义");
+        if (!es.existsIndexByMem(indexName)) return fail("索引未定义");
 
         Set<String> field = Sets.newHashSet();
         Set<String> aggregation = Sets.newLinkedHashSet();

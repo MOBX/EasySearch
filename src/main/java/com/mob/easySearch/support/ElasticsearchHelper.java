@@ -65,14 +65,16 @@ import com.mob.easySearch.cons.Definition;
  */
 public class ElasticsearchHelper implements Definition {
 
-    private Client client;
-    private String clusterName;
+    private Client                     client;
+    private String                     clusterName;
+    private static Map<String, Object> schemeMap;
 
     public ElasticsearchHelper(String clusterName, String host, int port) {
         this.client = makeClient(clusterName, host, port);
         this.clusterName = clusterName;
     }
 
+    @SuppressWarnings("static-access")
     public ElasticsearchHelper(String clusterName, String[] nodes) {
         List<Map<String, Object>> _nodes = Lists.newArrayList();
         for (String node : nodes) {
@@ -83,6 +85,7 @@ public class ElasticsearchHelper implements Definition {
         }
         this.client = makeClient(clusterName, _nodes);
         this.clusterName = clusterName;
+        this.schemeMap = allMapping();
     }
 
     public ElasticsearchHelper(String clusterName, List<Map<String, Object>> nodes) {
@@ -142,53 +145,12 @@ public class ElasticsearchHelper implements Definition {
      * @param matchField
      * @return
      */
-    @SuppressWarnings("unchecked")
     public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q, Map<String, Object[]> filters, Set<String> matchField, Table<String, String, Object> ranges) {
         access.info("[ElasticsearchHelper query start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
-        Set<String> allFields = Sets.newHashSet();
-        GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
-        try {
-            Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
-            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
-            allFields.addAll(_sourceMap.keySet());
-        } catch (Exception e) {
-            _.error("getMapping error!", e);
-        }
-
-        // 分词查询
-        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
-        queryStringBuilder.useDisMax(true);
-        for (String field : fields)
-            queryStringBuilder.field(field);
-        // 过滤条件
-        BoolFilterBuilder boolFilter = null;
-        if (filters != null && filters.size() != 0) {
-            boolFilter = FilterBuilders.boolFilter();
-            for (Entry<String, Object[]> entry : filters.entrySet()) {
-                if (allFields.contains(entry.getKey())) {
-                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
-                }
-            }
-        }
-        // 区间查询
-        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
-        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
-            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
-            for (Entry<String, Object> row : range.getValue().entrySet()) {
-                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
-            }
-            rangeList.add(rangeFilter);
-        }
-        if (rangeList.size() > 0) {
-            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
-            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
-        }
-        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+        Set<String> allFields = genAllFields(indexName, indexType);
+        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -231,53 +193,12 @@ public class ElasticsearchHelper implements Definition {
      * @param aggregation
      * @return
      */
-    @SuppressWarnings({ "unchecked" })
     public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges, boolean topOnly) {
         access.info("[ElasticsearchHelper aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
-        Set<String> allFields = Sets.newHashSet();
-        GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
-        try {
-            Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
-            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
-            allFields.addAll(_sourceMap.keySet());
-        } catch (Exception e) {
-            _.error("getMapping error!", e);
-        }
-
-        // 分词查询
-        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
-        queryStringBuilder.useDisMax(true);
-        for (String field : fields)
-            queryStringBuilder.field(field);
-        // 过滤条件
-        BoolFilterBuilder boolFilter = null;
-        if (filters != null && filters.size() != 0) {
-            boolFilter = FilterBuilders.boolFilter();
-            for (Entry<String, Object[]> entry : filters.entrySet()) {
-                if (allFields.contains(entry.getKey())) {
-                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
-                }
-            }
-        }
-        // 区间查询
-        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
-        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
-            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
-            for (Entry<String, Object> row : range.getValue().entrySet()) {
-                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
-            }
-            rangeList.add(rangeFilter);
-        }
-        if (rangeList.size() > 0) {
-            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
-            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
-        }
-        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+        Set<String> allFields = genAllFields(indexName, indexType);
+        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -379,53 +300,12 @@ public class ElasticsearchHelper implements Definition {
      * @param aggregation
      * @return
      */
-    @SuppressWarnings({ "unchecked" })
     public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
         access.info("[ElasticsearchHelper thin_aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
-        Set<String> allFields = Sets.newHashSet();
-        GetMappingsResponse mappingsRes = getMapping(indexName, indexType);
-        try {
-            Map<String, Object> sourceMap = mappingsRes.mappings().get(indexName).get(indexType).getSourceAsMap();
-            Map<String, Object> _sourceMap = (Map<String, Object>) sourceMap.get("properties");
-            allFields.addAll(_sourceMap.keySet());
-        } catch (Exception e) {
-            _.error("getMapping error!", e);
-        }
-
-        // 分词查询
-        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
-        queryStringBuilder.useDisMax(true);
-        for (String field : fields)
-            queryStringBuilder.field(field);
-        // 过滤条件
-        BoolFilterBuilder boolFilter = null;
-        if (filters != null && filters.size() != 0) {
-            boolFilter = FilterBuilders.boolFilter();
-            for (Entry<String, Object[]> entry : filters.entrySet()) {
-                if (allFields.contains(entry.getKey())) {
-                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
-                }
-            }
-        }
-        // 区间查询
-        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
-        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
-            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
-            for (Entry<String, Object> row : range.getValue().entrySet()) {
-                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
-                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
-                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
-            }
-            rangeList.add(rangeFilter);
-        }
-        if (rangeList.size() > 0) {
-            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
-            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
-        }
-        FilteredQueryBuilder query = QueryBuilders.filteredQuery(queryStringBuilder, boolFilter);
+        Set<String> allFields = genAllFields(indexName, indexType);
+        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -591,6 +471,10 @@ public class ElasticsearchHelper implements Definition {
         return getClient().admin().indices().exists(request).actionGet().isExists();
     }
 
+    public boolean existsIndexByMem(String indexName) {
+        return schemeMap.get("indexName") != null;
+    }
+
     /**
      * 通过索引ID获得
      * 
@@ -695,13 +579,81 @@ public class ElasticsearchHelper implements Definition {
 
     public AnalyzeResponse analyzer(String indexName, String text, String analyzer) {
         AnalyzeRequest request = new AnalyzeRequest(indexName, text).analyzer("ik");
-        if (StringUtils.isNotBlank(analyzer)) {
-            request.analyzer(analyzer);
-        }
+        if (StringUtils.isNotBlank(analyzer)) request.analyzer(analyzer);
         return getClient().admin().indices().analyze(request).actionGet();
     }
 
     // *********************************************** private method *******************************************//
+
+    private FilteredQueryBuilder genFilteredQuery(String q, Map<String, Object[]> filters, Table<String, String, Object> ranges, Set<String> fields, Set<String> allFields) {
+        // 分词查询
+        BoolQueryBuilder boolQuery = genQuery(q, fields);
+        BoolFilterBuilder boolFilter = genFilter(filters, ranges, allFields);
+        return QueryBuilders.filteredQuery(boolQuery, boolFilter);
+    }
+
+    private BoolFilterBuilder genFilter(Map<String, Object[]> filters, Table<String, String, Object> ranges, Set<String> allFields) {
+        // 过滤条件
+        BoolFilterBuilder boolFilter = null;
+        if (filters != null && filters.size() != 0) {
+            boolFilter = FilterBuilders.boolFilter();
+            for (Entry<String, Object[]> entry : filters.entrySet()) {
+                if (allFields.contains(entry.getKey())) {
+                    boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
+                }
+            }
+        }
+        // 区间查询
+        List<RangeFilterBuilder> rangeList = Lists.newArrayList();
+        for (Entry<String, Map<String, Object>> range : ranges.rowMap().entrySet()) {
+            RangeFilterBuilder rangeFilter = new RangeFilterBuilder(range.getKey());
+            for (Entry<String, Object> row : range.getValue().entrySet()) {
+                if (StringUtils.equals(row.getKey(), "gt")) rangeFilter.gt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lt")) rangeFilter.lt(row.getValue());
+                if (StringUtils.equals(row.getKey(), "gte")) rangeFilter.gte(row.getValue());
+                if (StringUtils.equals(row.getKey(), "lte")) rangeFilter.lte(row.getValue());
+            }
+            rangeList.add(rangeFilter);
+        }
+        if (rangeList.size() > 0) {
+            if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
+            boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
+        }
+        return boolFilter;
+    }
+
+    private BoolQueryBuilder genQuery(String q, Set<String> fields) {
+        BoolQueryBuilder boolQuery = new BoolQueryBuilder();
+        QueryStringQueryBuilder queryStringBuilder = new QueryStringQueryBuilder(q);
+        queryStringBuilder.autoGeneratePhraseQueries(true);
+        queryStringBuilder.useDisMax(true);
+        for (String field : fields)
+            queryStringBuilder.field(field);
+
+        QueryStringQueryBuilder queryStringBuilder2 = new QueryStringQueryBuilder(q);
+        queryStringBuilder2.autoGeneratePhraseQueries(false);
+        queryStringBuilder2.useDisMax(true);
+        for (String field : fields)
+            queryStringBuilder2.field(field);
+
+        boolQuery.should(queryStringBuilder).should(queryStringBuilder2);
+        return boolQuery;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> genAllFields(String indexName, String indexType) {
+        Set<String> allFields = Sets.newHashSet();
+        try {
+            Map<String, Object> indexNameMap = (Map<String, Object>) schemeMap.get(indexName);
+            Map<String, Object> typeMap = (Map<String, Object>) indexNameMap.get(indexType);
+            allFields.addAll(typeMap.keySet());
+        } catch (Exception e) {
+            _.error("genAllFields error!", e);
+        }
+        return allFields;
+    }
+
+    // ***********************************************************************************************************//
 
     private synchronized XContentBuilder getMapping(String indexName, String indexType, Map<String, Map<String, Object>> fields) {
         try {
