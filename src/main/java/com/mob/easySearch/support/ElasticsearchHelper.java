@@ -41,6 +41,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -51,7 +52,6 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.aggregations.metrics.max.MaxBuilder;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -145,12 +145,13 @@ public class ElasticsearchHelper implements Definition {
      * @param matchField
      * @return
      */
-    public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q, Map<String, Object[]> filters, Set<String> matchField, Table<String, String, Object> ranges) {
+    public Map<String, Object> query(String indexName, String indexType, int pageno, int pagesize, String q, Map<String, Object[]> filters, Set<String> matchField, Table<String, String, Object> ranges,
+                                     Map<String, String> scores) {
         access.info("[ElasticsearchHelper query start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = genAllFields(indexName, indexType);
-        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
+        QueryBuilder query = genScoreFilteredQuery(q, filters, ranges, scores, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -193,12 +194,13 @@ public class ElasticsearchHelper implements Definition {
      * @param aggregation
      * @return
      */
-    public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges, boolean topOnly) {
+    public Map<String, Object> aggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges,
+                                    Map<String, String> scores, boolean topOnly) {
         access.info("[ElasticsearchHelper aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = genAllFields(indexName, indexType);
-        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
+        QueryBuilder query = genScoreFilteredQuery(q, filters, ranges, scores, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -300,12 +302,13 @@ public class ElasticsearchHelper implements Definition {
      * @param aggregation
      * @return
      */
-    public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges) {
+    public List<String> thinAggr(String indexName, String indexType, String q, Map<String, Object[]> filters, Set<String> matchField, Set<String> aggregation, Table<String, String, Object> ranges,
+                                 Map<String, String> scores) {
         access.info("[ElasticsearchHelper thin_aggregation start]:" + q);
         if (StringUtils.isEmpty(q)) q = "*";
         Set<String> fields = matchField;
         Set<String> allFields = genAllFields(indexName, indexType);
-        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
+        QueryBuilder query = genScoreFilteredQuery(q, filters, ranges, scores, fields, allFields);
 
         SearchRequestBuilder search = makeSearchRequestBuilder(indexName, indexType).setQuery(query)//
         .setTimeout(TimeValue.timeValueSeconds(60))//
@@ -368,9 +371,10 @@ public class ElasticsearchHelper implements Definition {
      * @param pageno
      * @param pagesize
      * @param params
+     * @param sorts 排序字段
      * @return
      */
-    public Map<String, Object> match(String indexName, String indexType, int pageno, int pagesize, Map<String, Object> params) {
+    public Map<String, Object> match(String indexName, String indexType, int pageno, int pagesize, Map<String, Object> params, Map<String, String> sorts) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             if (entry.getValue() == null || StringUtils.isEmpty(entry.getKey())) continue;
@@ -382,7 +386,6 @@ public class ElasticsearchHelper implements Definition {
         .setTimeout(TimeValue.timeValueSeconds(60))//
         .setFrom((pageno - 1) * pagesize)//
         .setSize(pagesize)//
-        .addSort("createat", SortOrder.DESC)//
         .execute().actionGet();
 
         long total = response.getHits().getTotalHits();
@@ -584,7 +587,6 @@ public class ElasticsearchHelper implements Definition {
     }
 
     // *********************************************** private method *******************************************//
-
     private FilteredQueryBuilder genFilteredQuery(String q, Map<String, Object[]> filters, Table<String, String, Object> ranges, Set<String> fields, Set<String> allFields) {
         // 分词查询
         BoolQueryBuilder boolQuery = genQuery(q, fields);
@@ -592,13 +594,31 @@ public class ElasticsearchHelper implements Definition {
         return QueryBuilders.filteredQuery(boolQuery, boolFilter);
     }
 
+    private BaseQueryBuilder genScoreFilteredQuery(String q, Map<String, Object[]> filters, Table<String, String, Object> ranges, Map<String, String> scores, Set<String> fields, Set<String> allFields) {
+        // 分词查询
+        FilteredQueryBuilder query = genFilteredQuery(q, filters, ranges, fields, allFields);
+        // 自定义文本得分
+        if (scores != null && scores.size() > 0) {
+            List<String> list = Lists.newLinkedList();
+            for (Entry<String, String> entry : scores.entrySet()) {
+                if (StringUtils.equalsIgnoreCase("_score", entry.getKey())) {
+                    list.add("_score * " + entry.getValue());
+                    continue;
+                }
+                list.add("1/doc['" + entry.getKey() + "'].value * " + entry.getValue());
+            }
+            return QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.scriptFunction(StringUtils.join(list, " + ")));
+        }
+        return query;
+    }
+
     private BoolFilterBuilder genFilter(Map<String, Object[]> filters, Table<String, String, Object> ranges, Set<String> allFields) {
         // 过滤条件
         BoolFilterBuilder boolFilter = null;
-        if (filters != null && filters.size() != 0) {
-            boolFilter = FilterBuilders.boolFilter();
+        if (filters != null && filters.size() > 0) {
             for (Entry<String, Object[]> entry : filters.entrySet()) {
                 if (allFields.contains(entry.getKey())) {
+                    if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
                     boolFilter.must(FilterBuilders.inFilter(entry.getKey(), entry.getValue()));
                 }
             }
@@ -615,7 +635,7 @@ public class ElasticsearchHelper implements Definition {
             }
             rangeList.add(rangeFilter);
         }
-        if (rangeList.size() > 0) {
+        if (rangeList != null && rangeList.size() > 0) {
             if (boolFilter == null) boolFilter = FilterBuilders.boolFilter();
             boolFilter.should(rangeList.toArray(new RangeFilterBuilder[] {}));
         }

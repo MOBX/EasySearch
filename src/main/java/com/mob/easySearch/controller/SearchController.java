@@ -35,6 +35,10 @@ import com.mob.easySearch.support.JsonResult;
 @Api(value = "search", description = "搜索服务")
 public class SearchController extends BaseController {
 
+    public static void main(String[] args) {
+        System.out.println(customMatches("^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$", "_score:1;rank:2.36"));
+    }
+
     @ResponseBody
     @ApiOperation(value = "do search", httpMethod = "GET", response = JsonResult.class, notes = "搜索接口")
     @RequestMapping(value = "/{indexName}/{indexType}/search", produces = { "application/json" }, method = RequestMethod.GET)
@@ -49,29 +53,13 @@ public class SearchController extends BaseController {
 
         Set<String> field = Sets.newHashSet();
         Set<String> aggregation = Sets.newLinkedHashSet();
+        Map<String, String> scores = Maps.newLinkedHashMap();
         Map<String, Object[]> filter = Maps.newLinkedHashMap();
         Table<String, String, Object> ranges = HashBasedTable.create();
         boolean topOnly = false;
         try {
             if (request.getParameterValues("field") != null) field = Sets.newHashSet(request.getParameterValues("field"));
-            if (request.getParameterValues("distinct") != null) {
-                for (String value : request.getParameterValues("distinct"))
-                    aggregation.add(value);
-            }
-            for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-                if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
-                if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno") && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize") && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords")
-                    && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct") && !StringUtils.equalsIgnoreCase(entry.getKey(), "field") && !StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")
-                    && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
-                    filter.put(entry.getKey(), entry.getValue());
-                }
-                if (customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
-                    String r = StringUtils.substringBeforeLast(entry.getKey(), "_");
-                    String c = StringUtils.substringAfterLast(entry.getKey(), "_");
-                    ranges.put(r, c, entry.getValue()[0]);
-                }
-                if (StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")) topOnly = Boolean.parseBoolean(entry.getValue()[0]);
-            }
+            topOnly = convert(aggregation, scores, filter, ranges, topOnly);
         } catch (Exception e) {
             _.error("es.queryString param error!", e);
             return fail("参数不支持");
@@ -79,9 +67,9 @@ public class SearchController extends BaseController {
         Map<String, Object> result = Maps.newHashMap();
         try {
             if (aggregation.size() == 0) {
-                result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges);
+                result = es.query(indexName, indexType, pageno, pagesize, keywords, filter, field, ranges, scores);
             } else {
-                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges, topOnly);
+                result = aggr(indexName, indexType, pageno, pagesize, keywords, field, aggregation, filter, ranges, scores, topOnly);
             }
         } catch (Exception e) {
             _.error("es.queryString search error!", e);
@@ -106,9 +94,9 @@ public class SearchController extends BaseController {
      * @return
      */
     protected Map<String, Object> aggr(final String indexName, final String indexType, final Integer pageno, final Integer pagesize, final String keywords, final Set<String> field, final Set<String> aggregation,
-                                       final Map<String, Object[]> filter, final Table<String, String, Object> ranges, final boolean topOnly) {
+                                       final Map<String, Object[]> filter, final Table<String, String, Object> ranges, final Map<String, String> scores, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
-        List<String> _result = es.thinAggr(indexName, indexType, keywords, filter, field, aggregation, ranges);
+        List<String> _result = es.thinAggr(indexName, indexType, keywords, filter, field, aggregation, ranges, scores);
         result.put("total", _result.size());
         result.put("pageno", pageno);
         result.put("pagesize", pagesize);
@@ -134,7 +122,7 @@ public class SearchController extends BaseController {
                         }
                         try {
                             Map<String, Object> map = Maps.newHashMap();
-                            Map<String, Object> res = es.query(indexName, indexType, 1, topOnly ? 1 : 10000, keywords, filter, field, ranges);
+                            Map<String, Object> res = es.query(indexName, indexType, 1, topOnly ? 1 : 10000, keywords, filter, field, ranges, scores);
                             if (topOnly) {
                                 resData.addAll((List<Map<String, Object>>) res.get("list"));
                             } else {
@@ -172,9 +160,9 @@ public class SearchController extends BaseController {
      * @return
      */
     protected Map<String, Object> _aggr(final String indexName, final String indexType, final Integer pageno, final Integer pagesize, final String keywords, final Set<String> field, final Set<String> aggregation,
-                                        final Map<String, Object[]> filter, final Table<String, String, Object> ranges, final boolean topOnly) {
+                                        final Map<String, Object[]> filter, final Table<String, String, Object> ranges, Map<String, String> scores, final boolean topOnly) {
         Map<String, Object> result = Maps.newHashMap();
-        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, field, aggregation, ranges, topOnly);
+        Map<String, Object> _result = es.aggr(indexName, indexType, keywords, filter, field, aggregation, ranges, scores, topOnly);
         result.put("total", _result.get("total"));
         result.put("pageno", pageno);
         result.put("pagesize", pagesize);
@@ -198,5 +186,45 @@ public class SearchController extends BaseController {
             result.put("list", Lists.newArrayList());
         }
         return result;
+    }
+
+    // 请求参数构建
+    private boolean convert(Set<String> aggregation, Map<String, String> scores, Map<String, Object[]> filter, Table<String, String, Object> ranges, boolean topOnly) {
+        if (request.getParameterValues("distinct") != null) {
+            for (String value : request.getParameterValues("distinct"))
+                aggregation.add(value);
+        }
+        if (request.getParameterValues("score") != null) {
+            for (String value : request.getParameterValues("score")) {
+                // 正则匹配_score:1;rank:2.36
+                if (customMatches("^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$", value)) {
+                    String[] keys = StringUtils.split(value, ";");
+                    for (String key : keys) {
+                        String[] kv = StringUtils.split(key, ":");
+                        scores.put(kv[0], kv[1]);
+                    }
+                }
+            }
+        }
+        for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+            if (entry == null || StringUtils.isEmpty(entry.getKey()) || entry.getValue() == null) continue;
+            if (!StringUtils.equalsIgnoreCase(entry.getKey(), "pageno") //
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "pagesize") //
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "keywords") //
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "distinct") //
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "field") //
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")//
+                && !StringUtils.equalsIgnoreCase(entry.getKey(), "score")//
+                && !customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
+                filter.put(entry.getKey(), entry.getValue());
+            }
+            if (customMatches("(.*)_(lt|gt|lte|gte)$", entry.getKey())) {
+                String r = StringUtils.substringBeforeLast(entry.getKey(), "_");
+                String c = StringUtils.substringAfterLast(entry.getKey(), "_");
+                ranges.put(r, c, entry.getValue()[0]);
+            }
+            if (StringUtils.equalsIgnoreCase(entry.getKey(), "topOnly")) topOnly = Boolean.parseBoolean(entry.getValue()[0]);
+        }
+        return topOnly;
     }
 }
