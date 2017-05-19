@@ -35,10 +35,6 @@ import com.mob.easySearch.support.JsonResult;
 @Api(value = "search", description = "搜索服务")
 public class SearchController extends BaseController {
 
-    public static void main(String[] args) {
-        System.out.println(customMatches("^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$", "_score:1;rank:2.36"));
-    }
-
     @ResponseBody
     @ApiOperation(value = "do search", httpMethod = "GET", response = JsonResult.class, notes = "搜索接口")
     @RequestMapping(value = "/{indexName}/{indexType}/search", produces = { "application/json" }, method = RequestMethod.GET)

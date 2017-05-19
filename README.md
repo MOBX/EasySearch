@@ -23,6 +23,7 @@
 * sort   		排序规则,默认文本相似度排序
 * distinct      聚合字段
 * field         完全匹配字段
+* score         自定义文本得分
 
 
 ### 接口设计
@@ -165,6 +166,11 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&f
 ```
 #指定某些字段完全匹配的全文检索(支持分页)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&xxx=yyy'
+```
+
+```
+#指定自定义文本得分(支持分页)(参数要满足正则 `^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$`)
+curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&score=_score:1;rank:1.23'
 ```
 
 ```
