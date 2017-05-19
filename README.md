@@ -169,7 +169,7 @@ curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&x
 ```
 
 ```
-#指定自定义文本得分(支持分页)(参数要满足正则 `^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$`)
+#指定自定义文本得分(支持分页)(参数要满足正则 ^_score:\\d+(\\.\\d+)?;([a-z]+:\\d+(\\.\\d+)?;?)*$)
 curl -XGET 'http://127.0.0.1:8080/indexName/indexType/search?keywords=keywords&score=_score:1;rank:1.23'
 ```
 
