@@ -605,7 +605,7 @@ public class ElasticsearchHelper implements Definition {
                     list.add("_score * " + entry.getValue());
                     continue;
                 }
-                list.add("1/doc['" + entry.getKey() + "'].value * " + entry.getValue());
+                list.add("doc['" + entry.getKey() + "'].value * " + entry.getValue());
             }
             return QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.scriptFunction(StringUtils.join(list, " + ")));
         }
