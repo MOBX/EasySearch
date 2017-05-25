@@ -451,7 +451,7 @@ public class ElasticsearchHelper implements Definition {
      */
     public void deleteMapping(String indexName, String indexType) {
         DeleteMappingRequest mappingRequest = Requests.deleteMappingRequest(indexName).types(indexType);
-        getClient().admin().indices().deleteMapping(mappingRequest);
+        getClient().admin().indices().deleteMapping(mappingRequest).actionGet();
     }
 
     /**
@@ -568,6 +568,7 @@ public class ElasticsearchHelper implements Definition {
         DeleteIndexRequest request = new DeleteIndexRequest(indexName);
         getClient().admin().indices().delete(request);
     }
+
 
     public void bulk(BulkRequest req) {
         getClient().bulk(req).actionGet();

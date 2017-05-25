@@ -37,7 +37,7 @@ public class SchemaController extends BaseController {
         if (fields == null || fields.size() == 0) return fail("索引shcema为空");
 
         try {
-            if (es.existsIndex(indexName)) es.dropIndex(indexName);
+            if (es.existsIndex(indexName)) es.deleteMapping(indexName, indexType);
             if (!es.existsIndex(indexName)) es.createIndex(indexName);
             es.createMapping(indexName, indexType, fields);
             return ok();
@@ -73,7 +73,7 @@ public class SchemaController extends BaseController {
         if (StringUtils.isEmpty(indexName) || StringUtils.isEmpty(indexType)) return fail("参数错误");
 
         try {
-            if (es.existsIndex(indexName)) es.dropIndex(indexName);
+            if (es.existsIndex(indexName)) es.deleteMapping(indexName, indexType);
             return ok();
         } catch (Exception e) {
             _.error("create schema Exception!", e);
