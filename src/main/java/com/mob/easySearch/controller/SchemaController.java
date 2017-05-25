@@ -40,6 +40,7 @@ public class SchemaController extends BaseController {
             if (es.existsIndex(indexName)) es.deleteMapping(indexName, indexType);
             if (!es.existsIndex(indexName)) es.createIndex(indexName);
             es.createMapping(indexName, indexType, fields);
+            es.reloadMapping();
             return ok();
         } catch (Exception e) {
             _.error("create schema Exception!", e);
@@ -74,6 +75,7 @@ public class SchemaController extends BaseController {
 
         try {
             if (es.existsIndex(indexName)) es.deleteMapping(indexName, indexType);
+            es.reloadMapping();
             return ok();
         } catch (Exception e) {
             _.error("create schema Exception!", e);

@@ -421,6 +421,11 @@ public class ElasticsearchHelper implements Definition {
         return getClient().admin().indices().getMappings(mappingsRequest).actionGet();
     }
 
+    public void reloadMapping() {
+        schemeMap.clear();
+        schemeMap = allMapping();
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> allMapping() {
         Map<String, Object> map = Maps.newLinkedHashMap();
@@ -568,7 +573,6 @@ public class ElasticsearchHelper implements Definition {
         DeleteIndexRequest request = new DeleteIndexRequest(indexName);
         getClient().admin().indices().delete(request);
     }
-
 
     public void bulk(BulkRequest req) {
         getClient().bulk(req).actionGet();
