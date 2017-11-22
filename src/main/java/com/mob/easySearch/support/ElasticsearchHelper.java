@@ -515,7 +515,7 @@ public class ElasticsearchHelper implements Definition {
      * @param source
      */
     public void index(String indexName, String indexType, String id, Map<String, Object> source) {
-        getIndexRequestBuilder(indexName, indexType, id, source).execute().actionGet();
+        getIndexRequestBuilder(indexName, indexType, id, source).setRefresh(true).execute().actionGet();
     }
 
     /**
@@ -550,7 +550,7 @@ public class ElasticsearchHelper implements Definition {
                 _.error("bulk error!", e);
             }
         }
-        bulkRequest.execute().actionGet();
+        bulkRequest.setRefresh(true).execute().actionGet();
         br.close();
         return count;
     }
