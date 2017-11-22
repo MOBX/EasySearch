@@ -694,7 +694,7 @@ public class ElasticsearchHelper implements Definition {
                 String analyzer = (String) indexed.get("analyzer");
 
                 if (StringUtils.isEmpty(type)) type = "string";
-                mapping.startObject(name).field("type", type).field("store", store);
+                mapping.startObject(name).field("type", getElasticType(type)).field("store", store);
                 if (!analyzed) mapping.field("index", "not_analyzed");
                 if (searched) mapping.field("searched", searched);
                 if (StringUtils.isNotEmpty(analyzer)) mapping.field("analyzer", analyzer);
@@ -707,6 +707,40 @@ public class ElasticsearchHelper implements Definition {
             _.error("can not create mapping for '" + indexName + "'", e);
         }
         return null;
+    }
+
+    private String getElasticType(String name) {
+        String type = "string";
+        switch (name) {
+            case "String":
+                type = "string";
+                break;
+            case "Integer":
+                type = "integer";
+                break;
+            case "Float":
+                type = "float";
+                break;
+            case "Double":
+                type = "double";
+                break;
+            case "Byte":
+                type = "byte";
+                break;
+            case "Short":
+                type = "short";
+                break;
+            case "Long":
+                type = "long";
+                break;
+            case "Boolean":
+                type = "boolean";
+                break;
+            case "Date":
+                type = "date";
+                break;
+        }
+        return type;
     }
 
     private void createMapping(String indexName, String indexType, XContentBuilder mapping) {
